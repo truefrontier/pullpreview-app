@@ -26,10 +26,29 @@ let appState = {
   autoRefreshEnabled: true
 };
 
+// Import Lucide icons
+let lucideIcons;
+async function importLucideIcons() {
+  try {
+    // Use the bridge function to import the module
+    lucideIcons = await window.__electron_import__('lucide');
+  } catch (error) {
+    console.error('Error loading Lucide icons:', error);
+  }
+}
+
 // Initialize the application
-function init() {
+async function init() {
+  await importLucideIcons();
   setupEventListeners();
   setupIpcListeners();
+  
+  // Use the imported module or fallback to global lucide object
+  if (lucideIcons) {
+    lucideIcons.createIcons();
+  } else if (window.lucide) {
+    window.lucide.createIcons();
+  }
 }
 
 // Set up event listeners
@@ -196,11 +215,7 @@ function createFileElement(file) {
   fileHeader.className = 'file-header';
   fileHeader.innerHTML = `
     <span>${file.path}</span>
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-      <polyline points="15 3 21 3 21 9"/>
-      <line x1="10" y1="14" x2="21" y2="3"/>
-    </svg>
+    <i data-lucide="external-link" width="16" height="16"></i>
   `;
   
   // Add click handler to open file
@@ -234,6 +249,26 @@ function createFileElement(file) {
   });
   
   fileElement.appendChild(hunksContainer);
+  
+  // Initialize Lucide icons in the newly created element
+  if (lucideIcons) {
+    lucideIcons.createIcons({
+      attrs: {
+        width: '16',
+        height: '16'
+      },
+      elements: [fileElement]
+    });
+  } else if (window.lucide) {
+    window.lucide.createIcons({
+      attrs: {
+        width: '16',
+        height: '16'
+      },
+      elements: [fileElement]
+    });
+  }
+  
   return fileElement;
 }
 

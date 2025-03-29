@@ -1,4 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron');
+// Enable dynamic imports in the renderer
+contextBridge.exposeInMainWorld('__electron_import__', (url) => import(url));
 
 // Expose the API to the renderer process
 contextBridge.exposeInMainWorld('api', {

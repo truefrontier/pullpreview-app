@@ -212,7 +212,7 @@ button {
   transition: background-color 0.2s;
 }
 
-button svg {
+button i {
   margin-right: 4px;
 }
 
@@ -259,7 +259,7 @@ main {
   color: var(--secondary-text-color);
 }
 
-.centered-content svg {
+.centered-content i {
   stroke: var(--secondary-text-color);
   margin-bottom: 16px;
 }
@@ -314,11 +314,11 @@ main {
   background-color: var(--button-hover);
 }
 
-.file-header svg {
+.file-header i {
   opacity: 0.5;
 }
 
-.file-header:hover svg {
+.file-header:hover i {
   opacity: 1;
 }
 
