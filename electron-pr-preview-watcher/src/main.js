@@ -94,6 +94,13 @@ async function loadSavedRepository() {
       
       // Check if we have a saved repository path
       if (data.lastRepository && fs.existsSync(data.lastRepository)) {
+        // Notify renderer that we're loading a repository
+        if (mainWindow) {
+          mainWindow.webContents.send('repository-loading', {
+            path: data.lastRepository
+          });
+        }
+        
         const isValid = await validateRepository(data.lastRepository);
         
         if (isValid) {
@@ -126,12 +133,26 @@ async function loadSavedRepository() {
           }
           
           return true;
+        } else {
+          // Repository is not valid, notify renderer
+          if (mainWindow) {
+            mainWindow.webContents.send('repository-load-failed', {
+              path: data.lastRepository,
+              error: 'The saved repository is not valid.'
+            });
+          }
         }
       }
     }
     return false;
   } catch (error) {
     console.error('Error loading saved repository:', error);
+    // Notify renderer about the error
+    if (mainWindow) {
+      mainWindow.webContents.send('repository-load-failed', {
+        error: `Error loading saved repository: ${error.message}`
+      });
+    }
     return false;
   }
 }

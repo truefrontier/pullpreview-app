@@ -22,8 +22,14 @@ contextBridge.exposeInMainWorld('api', {
   selectEditorPath: () => ipcRenderer.invoke('select-editor-path'),
   
   // Events
+  onRepositoryLoading: (callback) =>
+    ipcRenderer.on('repository-loading', (_, data) => callback(data)),
+    
   onRepositoryLoaded: (callback) => 
     ipcRenderer.on('repository-loaded', (_, data) => callback(data)),
+    
+  onRepositoryLoadFailed: (callback) =>
+    ipcRenderer.on('repository-load-failed', (_, data) => callback(data)),
     
   onDiffLoading: (callback) => 
     ipcRenderer.on('diff-loading', (_, isLoading) => callback(isLoading)),
@@ -45,7 +51,9 @@ contextBridge.exposeInMainWorld('api', {
     
   // Cleanup function for removing event listeners
   removeAllListeners: () => {
+    ipcRenderer.removeAllListeners('repository-loading');
     ipcRenderer.removeAllListeners('repository-loaded');
+    ipcRenderer.removeAllListeners('repository-load-failed');
     ipcRenderer.removeAllListeners('diff-loading');
     ipcRenderer.removeAllListeners('diff-result');
     ipcRenderer.removeAllListeners('error');

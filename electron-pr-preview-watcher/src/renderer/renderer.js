@@ -75,8 +75,20 @@ async function init() {
     window.lucide.createIcons();
   }
   
-  // Initialize UI with empty state
-  updateUI();
+  // Show loading state during initial repository load
+  elements.emptyState.classList.add('hidden');
+  elements.loading.classList.remove('hidden');
+  updateStatus('Loading repository...', 'info');
+  
+  // Initialize UI after a short delay to let IPC events come through
+  setTimeout(() => {
+    // Only revert to empty state if no repository was loaded
+    if (!appState.repositoryLoaded) {
+      elements.loading.classList.add('hidden');
+      elements.emptyState.classList.remove('hidden');
+      updateStatus('Ready', 'info');
+    }
+  }, 1500); // Allow 1.5 seconds for repository load
 }
 
 // Set up event listeners
@@ -302,6 +314,19 @@ function setupIpcListeners() {
     }
   });
   
+  // Repository loading started
+  window.api.onRepositoryLoading((data) => {
+    // Show loading state
+    elements.emptyState.classList.add('hidden');
+    elements.loading.classList.remove('hidden');
+    elements.selectBranch.classList.add('hidden');
+    elements.noDifferences.classList.add('hidden');
+    elements.diffContainer.classList.add('hidden');
+    
+    // Update status with loading message
+    updateStatus(`Loading repository: ${truncatePath(data.path)}...`, 'info');
+  });
+  
   // Repository loaded
   window.api.onRepositoryLoaded((data) => {
     appState.repositoryLoaded = true;
@@ -310,8 +335,21 @@ function setupIpcListeners() {
     appState.targetBranch = data.targetBranch;
     appState.branches = data.branches;
     
+    // Hide loading state
+    elements.loading.classList.add('hidden');
+    
     updateUI();
     updateStatus(`Repository loaded: ${truncatePath(data.path)}`, 'success');
+  });
+  
+  // Repository load failed
+  window.api.onRepositoryLoadFailed((data) => {
+    // Reset to empty state
+    elements.loading.classList.add('hidden');
+    elements.emptyState.classList.remove('hidden');
+    
+    // Show error message
+    showError(data.error || 'Failed to load repository');
   });
   
   // Diff loading state
