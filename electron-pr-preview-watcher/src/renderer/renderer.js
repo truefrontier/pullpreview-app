@@ -106,11 +106,25 @@ function setupEventListeners() {
   elements.targetBranchSelect.addEventListener('change', async () => {
     try {
       const selectedBranch = elements.targetBranchSelect.value;
+      
+      // Don't do anything if we somehow get an empty branch
+      if (!selectedBranch) {
+        console.warn('Empty branch selected, ignoring');
+        return;
+      }
+      
+      console.log(`User selected branch: ${selectedBranch}`);
+      
+      // Update application state
       appState.targetBranch = selectedBranch;
       
       // Update UI immediately to hide the "select branch" message
+      elements.emptyState.classList.add('hidden');  // Ensure empty state is hidden
       elements.selectBranch.classList.add('hidden');
       elements.loading.classList.remove('hidden');
+      elements.noDifferences.classList.add('hidden');
+      elements.diffContainer.classList.add('hidden');
+      
       updateStatus(`Comparing against branch: ${selectedBranch}...`);
       
       const result = await window.api.setTargetBranch(selectedBranch);
@@ -364,16 +378,22 @@ function setupIpcListeners() {
     
     // Set the target branch in the dropdown if it exists
     if (data.branch && appState.branches.includes(data.branch)) {
+      // First, make sure the dropdown is populated with all available branches
+      updateBranchesDropdown();
+      
       // Update application state
       appState.targetBranch = data.branch;
       
       // Update UI to show the selected branch
       updateTargetBranchSelect();
       
-      // Trigger a branch change to load the diff
-      elements.targetBranchSelect.dispatchEvent(new Event('change'));
-      
-      updateStatus(`Loaded saved branch: ${data.branch}`);
+      // Add a small delay to ensure the UI is fully updated before loading the diff
+      setTimeout(() => {
+        // Trigger a branch change to load the diff
+        elements.targetBranchSelect.dispatchEvent(new Event('change'));
+        
+        updateStatus(`Loaded saved branch: ${data.branch}`);
+      }, 100);
     }
   });
 }
@@ -506,10 +526,14 @@ function updateLoadingState() {
 
 // Update branches dropdown
 function updateBranchesDropdown() {
+  // Clear existing options
   elements.targetBranchSelect.innerHTML = '';
   
-  // Add a placeholder/prompt option
-  if (!appState.targetBranch) {
+  // Save currently selected value to reselect it after rebuilding dropdown
+  const previouslySelectedBranch = appState.targetBranch;
+  
+  // Add a placeholder/prompt option if no branch is selected
+  if (!previouslySelectedBranch) {
     const placeholderOption = document.createElement('option');
     placeholderOption.value = "";
     placeholderOption.textContent = "-- Select a branch --";
@@ -518,14 +542,32 @@ function updateBranchesDropdown() {
     elements.targetBranchSelect.appendChild(placeholderOption);
   }
   
+  // Check if we have any branches
+  if (appState.branches.length === 0) {
+    console.warn('No branches available to populate dropdown');
+    return;
+  }
+  
   // Add all available branches
   appState.branches.forEach(branch => {
     const option = document.createElement('option');
     option.value = branch;
     option.textContent = branch;
-    option.selected = branch === appState.targetBranch;
+    option.selected = branch === previouslySelectedBranch;
     elements.targetBranchSelect.appendChild(option);
   });
+  
+  // Double-check if the selected branch is properly set in the dropdown
+  if (previouslySelectedBranch) {
+    const options = [...elements.targetBranchSelect.options];
+    const selectedIndex = options.findIndex(opt => opt.value === previouslySelectedBranch);
+    
+    if (selectedIndex >= 0) {
+      elements.targetBranchSelect.selectedIndex = selectedIndex;
+    } else {
+      console.warn(`Could not find selected branch "${previouslySelectedBranch}" in dropdown options`);
+    }
+  }
 }
 
 // Render diff data

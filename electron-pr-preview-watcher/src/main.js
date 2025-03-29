@@ -101,14 +101,28 @@ async function loadSavedRepository() {
           
           // If we have a saved target branch, set it
           if (data.lastTargetBranch) {
-            // We need to wait a short time to let the UI update before setting the target branch
+            // We need to wait a longer time to let the UI fully initialize and load all branches
+            // before setting the target branch
             setTimeout(() => {
               if (mainWindow) {
-                mainWindow.webContents.send('set-target-branch', {
-                  branch: data.lastTargetBranch
+                console.log(`Setting target branch from saved preferences: ${data.lastTargetBranch}`);
+                
+                // First check if the target branch exists
+                currentRepo.git.branch().then(branchInfo => {
+                  const allBranches = [...branchInfo.all];
+                  
+                  if (allBranches.includes(data.lastTargetBranch)) {
+                    mainWindow.webContents.send('set-target-branch', {
+                      branch: data.lastTargetBranch
+                    });
+                  } else {
+                    console.warn(`Saved target branch "${data.lastTargetBranch}" not found in available branches`);
+                  }
+                }).catch(err => {
+                  console.error("Error checking branches before setting target branch:", err);
                 });
               }
-            }, 500);
+            }, 1000); // Increased from 500ms to 1000ms
           }
           
           return true;
