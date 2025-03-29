@@ -18,7 +18,18 @@ const elements = {
   closeError: document.getElementById('close-error'),
   statusText: document.getElementById('status-text'),
   lastUpdatedTime: document.getElementById('last-updated-time'),
-  expandCollapseAll: document.getElementById('expand-collapse-all')
+  expandCollapseAll: document.getElementById('expand-collapse-all'),
+  
+  // Settings
+  settingsButton: document.getElementById('settings-button'),
+  settingsModal: document.getElementById('settings-modal'),
+  closeSettings: document.getElementById('close-settings'),
+  editorSelect: document.getElementById('editor-select'),
+  customEditorPathContainer: document.getElementById('custom-editor-path-container'),
+  customEditorPath: document.getElementById('custom-editor-path'),
+  browseEditorPath: document.getElementById('browse-editor-path'),
+  saveSettings: document.getElementById('save-settings'),
+  cancelSettings: document.getElementById('cancel-settings')
 };
 
 // Application state
@@ -31,7 +42,13 @@ let appState = {
   isLoading: false,
   autoRefreshEnabled: true,
   allFilesExpanded: true, // Default to expanded
-  expandedFiles: new Set() // Track which files are expanded
+  expandedFiles: new Set(), // Track which files are expanded
+  
+  // Settings
+  settings: {
+    editorType: 'system', // Default to system editor
+    customEditorPath: ''  // Only used if editorType is 'custom'
+  }
 };
 
 // Import Lucide icons
@@ -172,9 +189,88 @@ function setupEventListeners() {
     }
   });
   
+  // Settings button - open settings modal
+  elements.settingsButton.addEventListener('click', () => {
+    // Load current settings into the form
+    elements.editorSelect.value = appState.settings.editorType;
+    elements.customEditorPath.value = appState.settings.customEditorPath;
+    
+    // Show/hide custom editor path input based on selection
+    elements.customEditorPathContainer.classList.toggle('hidden', elements.editorSelect.value !== 'custom');
+    
+    // Show the modal
+    elements.settingsModal.classList.remove('hidden');
+  });
+  
+  // Close settings modal
+  elements.closeSettings.addEventListener('click', () => {
+    elements.settingsModal.classList.add('hidden');
+  });
+  
+  // Cancel settings
+  elements.cancelSettings.addEventListener('click', () => {
+    elements.settingsModal.classList.add('hidden');
+  });
+  
+  // Editor type select change
+  elements.editorSelect.addEventListener('change', () => {
+    // Show/hide custom editor path based on selection
+    elements.customEditorPathContainer.classList.toggle('hidden', elements.editorSelect.value !== 'custom');
+  });
+  
+  // Browse for custom editor
+  elements.browseEditorPath.addEventListener('click', async () => {
+    try {
+      const result = await window.api.selectEditorPath();
+      if (result.success && result.path) {
+        elements.customEditorPath.value = result.path;
+      }
+    } catch (error) {
+      showError(`Error selecting editor path: ${error.message}`);
+    }
+  });
+  
+  // Save settings
+  elements.saveSettings.addEventListener('click', async () => {
+    try {
+      // Update app state with form values
+      appState.settings.editorType = elements.editorSelect.value;
+      
+      if (appState.settings.editorType === 'custom') {
+        appState.settings.customEditorPath = elements.customEditorPath.value.trim();
+        
+        // Validate custom path is not empty
+        if (!appState.settings.customEditorPath) {
+          showError('Please enter a path to the custom editor or select a different editor type.');
+          return;
+        }
+      }
+      
+      // Save settings to main process
+      const result = await window.api.saveSettings(appState.settings);
+      
+      if (result.success) {
+        // Close modal
+        elements.settingsModal.classList.add('hidden');
+        updateStatus('Settings saved successfully', 'success');
+      } else if (result.error) {
+        showError(result.error);
+      }
+    } catch (error) {
+      showError(`Error saving settings: ${error.message}`);
+    }
+  });
+  
   // Close error toast
   elements.closeError.addEventListener('click', () => {
     elements.errorToast.classList.add('hidden');
+  });
+  
+  // Close modals when clicking outside
+  elements.settingsModal.addEventListener('click', (event) => {
+    if (event.target === elements.settingsModal) {
+      elements.settingsModal.classList.add('hidden');
+    }
   });
   
   // Clean up event listeners when window is closed
@@ -185,6 +281,13 @@ function setupEventListeners() {
 
 // Set up IPC listeners for communication with main process
 function setupIpcListeners() {
+  // Settings loaded
+  window.api.onSettingsLoaded((data) => {
+    if (data.settings) {
+      appState.settings = data.settings;
+    }
+  });
+  
   // Repository loaded
   window.api.onRepositoryLoaded((data) => {
     appState.repositoryLoaded = true;

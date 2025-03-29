@@ -44,6 +44,11 @@
               <span>Change Repo</span>
             </button>
             
+            <button id="settings-button" class="toolbar-button">
+              <i data-lucide="settings"></i>
+              <span>Settings</span>
+            </button>
+            
             <div class="toggle-container">
               <label class="toggle-switch" title="Auto-refresh when files change">
                 <input type="checkbox" id="auto-refresh" checked>
@@ -99,6 +104,43 @@
     <div id="error-toast" class="hidden">
       <div id="error-message"></div>
       <button id="close-error" aria-label="Close">×</button>
+    </div>
+    
+    <!-- Settings modal -->
+    <div id="settings-modal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Settings</h2>
+          <button id="close-settings" aria-label="Close settings">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="settings-group">
+            <h3>File Editor</h3>
+            <p>Choose which editor to use when opening files.</p>
+            <div class="settings-control">
+              <label for="editor-select">Default Editor:</label>
+              <select id="editor-select">
+                <option value="system">System Default</option>
+                <option value="vscode">VS Code</option>
+                <option value="sublime">Sublime Text</option>
+                <option value="atom">Atom</option>
+                <option value="custom">Custom</option>
+              </select>
+            </div>
+            <div id="custom-editor-path-container" class="settings-control hidden">
+              <label for="custom-editor-path">Custom Editor Path:</label>
+              <div class="input-with-button">
+                <input type="text" id="custom-editor-path" placeholder="/path/to/editor">
+                <button id="browse-editor-path">Browse...</button>
+              </div>
+            </div>
+          </div>
+          <div class="settings-actions">
+            <button id="save-settings" class="primary-button">Save</button>
+            <button id="cancel-settings">Cancel</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
   

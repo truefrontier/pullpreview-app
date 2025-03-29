@@ -17,6 +17,10 @@ contextBridge.exposeInMainWorld('api', {
   // File operations
   openFile: (filePath) => ipcRenderer.invoke('open-file', filePath),
   
+  // Settings operations
+  saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
+  selectEditorPath: () => ipcRenderer.invoke('select-editor-path'),
+  
   // Events
   onRepositoryLoaded: (callback) => 
     ipcRenderer.on('repository-loaded', (_, data) => callback(data)),
@@ -36,6 +40,9 @@ contextBridge.exposeInMainWorld('api', {
   onSetTargetBranch: (callback) =>
     ipcRenderer.on('set-target-branch', (_, data) => callback(data)),
     
+  onSettingsLoaded: (callback) =>
+    ipcRenderer.on('settings-loaded', (_, data) => callback(data)),
+    
   // Cleanup function for removing event listeners
   removeAllListeners: () => {
     ipcRenderer.removeAllListeners('repository-loaded');
@@ -44,5 +51,6 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.removeAllListeners('error');
     ipcRenderer.removeAllListeners('branch-changed');
     ipcRenderer.removeAllListeners('set-target-branch');
+    ipcRenderer.removeAllListeners('settings-loaded');
   }
 });

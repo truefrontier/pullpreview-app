@@ -12,6 +12,12 @@ let currentRepo = null;
 let refreshTimer = null;
 let isAutoRefreshEnabled = true;
 
+// Settings storage
+let appSettings = {
+  editorType: 'system',
+  customEditorPath: ''
+};
+
 function createWindow() {
   // Create the browser window
   mainWindow = new BrowserWindow({
@@ -55,6 +61,30 @@ function createWindow() {
   // We'll always prompt the user to select one first
 }
 
+// Load settings from preferences file
+function loadSettings() {
+  try {
+    const userDataPath = path.join(app.getPath('userData'), 'prefs.json');
+    if (fs.existsSync(userDataPath)) {
+      const data = JSON.parse(fs.readFileSync(userDataPath, 'utf8'));
+      
+      // Load settings if they exist
+      if (data.settings) {
+        appSettings = data.settings;
+      }
+      
+      // Send settings to the renderer
+      if (mainWindow) {
+        mainWindow.webContents.send('settings-loaded', {
+          settings: appSettings
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error loading settings:', error);
+  }
+}
+
 // Load saved repository if available
 async function loadSavedRepository() {
   try {
@@ -95,6 +125,9 @@ async function loadSavedRepository() {
 // This method will be called when Electron has finished initialization
 app.whenReady().then(async () => {
   createWindow();
+  
+  // Load settings first
+  loadSettings();
   
   // Try to load the saved repository
   await loadSavedRepository();
@@ -575,13 +608,121 @@ ipcMain.handle('open-file', async (event, filePath) => {
   
   try {
     const fullPath = path.join(currentRepo.path, filePath);
-    shell.openPath(fullPath);
-    return { success: true };
+    
+    // Use custom editor if configured
+    if (appSettings.editorType === 'custom' && appSettings.customEditorPath) {
+      const { spawn } = require('child_process');
+      spawn(appSettings.customEditorPath, [fullPath], { 
+        detached: true, 
+        stdio: 'ignore' 
+      }).unref();
+      return { success: true };
+    } 
+    // Use editor-specific commands
+    else if (appSettings.editorType === 'vscode') {
+      // For VS Code
+      const vscodeCommand = process.platform === 'win32' ? 'code.cmd' : 'code';
+      const { spawn } = require('child_process');
+      spawn(vscodeCommand, [fullPath], { 
+        detached: true, 
+        stdio: 'ignore' 
+      }).unref();
+      return { success: true };
+    }
+    else if (appSettings.editorType === 'sublime') {
+      // For Sublime Text
+      const sublimeCommand = process.platform === 'win32' ? 'subl.exe' : 'subl';
+      const { spawn } = require('child_process');
+      spawn(sublimeCommand, [fullPath], { 
+        detached: true, 
+        stdio: 'ignore' 
+      }).unref();
+      return { success: true };
+    }
+    else if (appSettings.editorType === 'atom') {
+      // For Atom
+      const atomCommand = process.platform === 'win32' ? 'atom.cmd' : 'atom';
+      const { spawn } = require('child_process');
+      spawn(atomCommand, [fullPath], { 
+        detached: true, 
+        stdio: 'ignore' 
+      }).unref();
+      return { success: true };
+    }
+    // Default to system default
+    else {
+      shell.openPath(fullPath);
+      return { success: true };
+    }
   } catch (error) {
     console.error('Error opening file:', error);
     return { 
       success: false, 
       error: `Error opening file: ${error.message}` 
+    };
+  }
+});
+
+// Save settings
+ipcMain.handle('save-settings', async (event, settings) => {
+  try {
+    // Update app settings
+    appSettings = settings;
+    
+    // Load existing prefs to preserve other settings
+    let userData = {};
+    const userDataPath = path.join(app.getPath('userData'), 'prefs.json');
+    
+    if (fs.existsSync(userDataPath)) {
+      try {
+        userData = JSON.parse(fs.readFileSync(userDataPath, 'utf8'));
+      } catch (e) {
+        console.warn('Error reading prefs file, will overwrite:', e);
+      }
+    }
+    
+    // Update with new settings
+    userData.settings = settings;
+    
+    // Write updated preferences
+    fs.writeFileSync(
+      userDataPath,
+      JSON.stringify(userData),
+      'utf8'
+    );
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Error saving settings:', error);
+    return { 
+      success: false, 
+      error: `Error saving settings: ${error.message}` 
+    };
+  }
+});
+
+// Select editor path
+ipcMain.handle('select-editor-path', async () => {
+  try {
+    const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openFile'],
+      title: 'Select Editor',
+      message: 'Select the editor executable',
+      filters: [
+        { name: 'Applications', extensions: ['exe', 'app', 'dmg', '*'] }
+      ]
+    });
+    
+    if (!canceled && filePaths.length > 0) {
+      return { success: true, path: filePaths[0] };
+    }
+    
+    return { success: false };
+  } catch (error) {
+    console.error('Error selecting editor path:', error);
+    return { 
+      success: false, 
+      error: `Error selecting editor path: ${error.message}` 
     };
   }
 });
