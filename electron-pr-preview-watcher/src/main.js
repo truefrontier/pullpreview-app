@@ -7,9 +7,8 @@ const chokidar = require('chokidar');
 // Keep a global reference of the window object to prevent it from being garbage collected
 let mainWindow;
 
-// Keep track of the current repository and watcher
+// Keep track of the current repository and refresh timer
 let currentRepo = null;
-let fileWatcher = null;
 let refreshTimer = null;
 let isAutoRefreshEnabled = true;
 
@@ -52,11 +51,8 @@ function createWindow() {
     stopAutoRefresh();
   });
 
-  // Load last repository path from user preferences if available
-  const lastRepoPath = app.getPath('userData');
-  if (lastRepoPath && fs.existsSync(lastRepoPath)) {
-    loadRepository(lastRepoPath);
-  }
+  // Don't automatically load a repository path
+  // We'll always prompt the user to select one first
 }
 
 // This method will be called when Electron has finished initialization
@@ -118,17 +114,53 @@ async function loadRepository(repoPath) {
     // Get repository information
     const currentBranch = await getCurrentBranch();
     const branches = await getAllBranches();
-    let targetBranch = 'main';
     
-    // Use stored target branch or fallback to main/master
-    if (branches.includes('main')) {
-      targetBranch = 'main';
-    } else if (branches.includes('master')) {
-      targetBranch = 'master';
+    // Log what we found for debugging
+    console.log(`Current branch: ${currentBranch}`);
+    console.log(`Available branches: ${branches.join(', ')}`);
+    
+    // Find a suitable target branch
+    // First try common branch names, then fallback to the first branch that's not the current one
+    let targetBranch = null;
+    
+    // Verify the branches array contains valid entries
+    if (!branches || branches.length === 0) {
+      console.warn("No branches found, using current branch as fallback");
+      targetBranch = currentBranch;
+    } else {
+      // Try common branch names first
+      const commonBranches = ['main', 'master', 'develop', 'development', 'staging'];
+      for (const branch of commonBranches) {
+        if (branches.includes(branch) && branch !== currentBranch) {
+          console.log(`Using common branch: ${branch}`);
+          targetBranch = branch;
+          break;
+        }
+      }
+      
+      // If no common branch found, use the first branch that's not the current one
+      if (!targetBranch) {
+        const alternateBranch = branches.find(branch => branch !== currentBranch);
+        if (alternateBranch) {
+          console.log(`Using alternate branch: ${alternateBranch}`);
+          targetBranch = alternateBranch;
+        } else {
+          // Last resort - use the current branch
+          console.log(`Using current branch as fallback: ${currentBranch}`);
+          targetBranch = currentBranch;
+        }
+      }
     }
     
     // Save repository path in preferences
-    app.setPath('userData', repoPath);
+    const userData = {
+      lastRepository: repoPath
+    };
+    fs.writeFileSync(
+      path.join(app.getPath('userData'), 'prefs.json'),
+      JSON.stringify(userData),
+      'utf8'
+    );
     
     // Send repository information to renderer
     if (mainWindow) {
@@ -171,14 +203,86 @@ async function getCurrentBranch() {
 async function getAllBranches() {
   if (!currentRepo) return [];
   try {
-    // Fetch to ensure the branch list is up-to-date
-    await currentRepo.git.fetch(['--prune']);
+    // Get the list of branches in a more reliable way
+    let branches = [];
     
-    const result = await currentRepo.git.branch(['-a']);
-    return result.all.map(branch => {
-      // Clean up remote branch names
-      return branch.replace(/^remotes\/origin\//, '');
-    });
+    // Get local branches
+    try {
+      const branchSummary = await currentRepo.git.branchLocal();
+      console.log('Local branches:', branchSummary.all);
+      branches = [...branchSummary.all];
+    } catch (error) {
+      console.warn('Error getting local branches:', error);
+    }
+    
+    // Try to fetch remote branches
+    try {
+      await currentRepo.git.fetch(['--prune']);
+      
+      // Get remote branches
+      const remoteRefs = await currentRepo.git.raw(['for-each-ref', '--format=%(refname:short)', 'refs/remotes/']);
+      
+      // Parse the remote refs and convert to branch names
+      if (remoteRefs) {
+        const remoteBranches = remoteRefs
+          .split('\n')
+          .filter(line => line.trim() !== '')
+          .map(line => {
+            // Convert remote branch name (e.g., origin/main -> main)
+            const parts = line.split('/');
+            if (parts.length >= 2) {
+              return parts.slice(1).join('/'); // Skip the remote name (origin)
+            }
+            return line;
+          });
+        
+        console.log('Remote branches:', remoteBranches);
+        
+        // Add unique remote branches to our list
+        branches = [...new Set([...branches, ...remoteBranches])];
+      }
+    } catch (error) {
+      console.warn('Error fetching or getting remote branches:', error);
+    }
+    
+    // If we still don't have any branches, try a last resort approach
+    if (branches.length === 0) {
+      try {
+        // Try to get all refs
+        const allRefs = await currentRepo.git.raw(['show-ref']);
+        if (allRefs) {
+          const refBranches = allRefs
+            .split('\n')
+            .filter(line => line.includes('refs/heads/') || line.includes('refs/remotes/'))
+            .map(line => {
+              if (line.includes('refs/heads/')) {
+                return line.split('refs/heads/')[1];
+              } else if (line.includes('refs/remotes/')) {
+                const remote = line.split('refs/remotes/')[1];
+                return remote.split('/').slice(1).join('/'); // Remove origin/ prefix
+              }
+              return '';
+            })
+            .filter(branch => branch !== '');
+          
+          console.log('Branches from refs:', refBranches);
+          branches = [...new Set([...branches, ...refBranches])];
+        }
+      } catch (error) {
+        console.warn('Error getting refs:', error);
+      }
+    }
+    
+    // If branches is still empty, try to get at least the current branch
+    if (branches.length === 0) {
+      const currentBranch = await getCurrentBranch();
+      if (currentBranch && currentBranch !== 'unknown') {
+        branches.push(currentBranch);
+      }
+    }
+    
+    console.log('Final branches list:', branches);
+    return branches;
   } catch (error) {
     console.error('Error getting branches:', error);
     return [];
@@ -191,47 +295,77 @@ function setupAutoRefresh(targetBranch) {
   
   if (!currentRepo || !isAutoRefreshEnabled) return;
   
-  // Watch repository for file changes
-  fileWatcher = chokidar.watch(currentRepo.path, {
-    ignored: [
-      '**/node_modules/**',
-      '**/.git/**',
-      '**/dist/**',
-      '**/build/**'
-    ],
-    persistent: true,
-    ignoreInitial: true,
-  });
+  // Instead of watching all files, we'll periodically check git status
+  // This is much more efficient for large repositories
   
-  // Debounce file changes to avoid too many refreshes
-  let debounceTimeout = null;
-  fileWatcher.on('all', (event, path) => {
-    clearTimeout(debounceTimeout);
-    debounceTimeout = setTimeout(() => {
-      generateDiff(targetBranch);
-    }, 500); // 500ms debounce
-  });
+  // First check - start immediately
+  checkGitStatusAndRefresh(targetBranch);
   
-  // Set up periodic refresh (every 2 minutes)
+  // Set up periodic check for both local changes and remote changes
   refreshTimer = setInterval(async () => {
     try {
       if (currentRepo) {
-        // Fetch latest changes
-        await currentRepo.git.fetch(['--prune']);
-        generateDiff(targetBranch);
+        checkGitStatusAndRefresh(targetBranch);
       }
     } catch (error) {
       console.error('Error in periodic refresh:', error);
     }
-  }, 120000); // 2 minutes
+  }, 3000); // Check every 3 seconds
+}
+
+// Check git status and refresh diff if changes are detected
+async function checkGitStatusAndRefresh(targetBranch) {
+  if (!currentRepo || !targetBranch) return;
+  
+  try {
+    // Check if we have any changes before regenerating the diff
+    let shouldRefresh = false;
+    
+    try {
+      // Use git status to check for changes efficiently
+      const status = await currentRepo.git.status();
+      
+      // If there are any changes, set the refresh flag
+      if (status.files && status.files.length > 0) {
+        shouldRefresh = true;
+      } else if (
+        (status.created && status.created.length > 0) || 
+        (status.deleted && status.deleted.length > 0) || 
+        (status.modified && status.modified.length > 0) ||
+        (status.renamed && status.renamed.length > 0)
+      ) {
+        shouldRefresh = true;
+      }
+    } catch (statusError) {
+      console.warn('Error in git status:', statusError);
+      // Still try to refresh diff if status check fails
+      shouldRefresh = true;
+    }
+    
+    // If we have changes or status check failed, regenerate the diff
+    if (shouldRefresh) {
+      // Occasionally fetch from remote
+      if (Math.random() < 0.1) { // ~10% chance
+        try {
+          await currentRepo.git.fetch(['--prune']);
+        } catch (fetchError) {
+          console.warn('Error fetching from remote:', fetchError);
+          // Continue anyway
+        }
+      }
+      
+      // Generate the diff
+      generateDiff(targetBranch);
+    }
+  } catch (error) {
+    console.error('Error in checkGitStatusAndRefresh:', error);
+  }
 }
 
 // Stop auto-refresh
 function stopAutoRefresh() {
-  if (fileWatcher) {
-    fileWatcher.close();
-    fileWatcher = null;
-  }
+  // No more file watcher - we use git status instead
+  fileWatcher = null;
   
   if (refreshTimer) {
     clearInterval(refreshTimer);
@@ -256,6 +390,7 @@ ipcMain.handle('toggle-auto-refresh', async (event, enabled) => {
 // Generate diff between current branch and target branch
 async function generateDiff(targetBranch) {
   if (!currentRepo) return;
+  if (!targetBranch) return;
   
   try {
     // Notify UI that diff is loading
@@ -263,8 +398,59 @@ async function generateDiff(targetBranch) {
       mainWindow.webContents.send('diff-loading', true);
     }
     
+    // Get current branch - we'll need it as fallback
+    const currentBranch = await getCurrentBranch();
+    
+    // First verify that the target branch exists
+    console.log(`Attempting to diff against target branch: ${targetBranch}`);
+    const branches = await getAllBranches();
+    console.log(`Available branches: ${branches.join(', ')}`);
+    
+    // If target branch doesn't exist, fall back to current branch
+    if (!branches.includes(targetBranch)) {
+      console.warn(`Branch "${targetBranch}" not found in available branches. Falling back to current branch.`);
+      
+      // If current branch is also not in the list, we have a problem
+      if (!branches.includes(currentBranch)) {
+        console.error("Neither target branch nor current branch are in the list of available branches");
+        throw new Error(`Branch "${targetBranch}" does not exist, and current branch lookup failed. Please select a valid branch.`);
+      }
+      
+      // Use current branch as fallback
+      targetBranch = currentBranch;
+      
+      // Notify UI that we're changing target branch
+      if (mainWindow) {
+        mainWindow.webContents.send('branch-changed', {
+          targetBranch: currentBranch
+        });
+      }
+    }
+    
+    // Try to determine a valid revision to diff against
+    let diffCommand;
+    try {
+      // Check if this is a valid revision first
+      await currentRepo.git.revparse([targetBranch]);
+      diffCommand = [targetBranch, '--'];
+    } catch (revError) {
+      console.warn(`Invalid revision: ${targetBranch}. Trying fallback options.`);
+      
+      // Try with origin/ prefix
+      try {
+        await currentRepo.git.revparse([`origin/${targetBranch}`]);
+        diffCommand = [`origin/${targetBranch}`, '--'];
+      } catch (originError) {
+        // Last resort - try HEAD
+        console.warn(`Falling back to HEAD for diff`);
+        diffCommand = ['HEAD', '--'];
+      }
+    }
+    
+    console.log(`Executing diff command: git diff ${diffCommand.join(' ')}`);
+    
     // Generate diff
-    const diffResult = await currentRepo.git.diff([targetBranch, '--']);
+    const diffResult = await currentRepo.git.diff(diffCommand);
     
     // Parse diff result
     const parsedDiff = parseDiffOutput(diffResult);
@@ -276,9 +462,21 @@ async function generateDiff(targetBranch) {
     }
   } catch (error) {
     console.error('Error generating diff:', error);
+    
+    // Create a user-friendly error message
+    let userMessage = 'Could not generate diff. ';
+    
+    if (error.message.includes('bad revision') || error.message.includes('does not exist')) {
+      userMessage += `Branch "${targetBranch}" does not exist. Please select a different branch.`;
+    } else if (error.message.includes('not a git repository')) {
+      userMessage += 'The selected directory is not a valid Git repository.';
+    } else {
+      userMessage += error.message;
+    }
+    
     if (mainWindow) {
       mainWindow.webContents.send('error', {
-        message: `Error generating diff: ${error.message}`
+        message: userMessage
       });
       mainWindow.webContents.send('diff-loading', false);
     }

@@ -30,11 +30,15 @@ contextBridge.exposeInMainWorld('api', {
   onError: (callback) => 
     ipcRenderer.on('error', (_, error) => callback(error)),
     
+  onBranchChanged: (callback) => 
+    ipcRenderer.on('branch-changed', (_, data) => callback(data)),
+    
   // Cleanup function for removing event listeners
   removeAllListeners: () => {
     ipcRenderer.removeAllListeners('repository-loaded');
     ipcRenderer.removeAllListeners('diff-loading');
     ipcRenderer.removeAllListeners('diff-result');
     ipcRenderer.removeAllListeners('error');
+    ipcRenderer.removeAllListeners('branch-changed');
   }
 });

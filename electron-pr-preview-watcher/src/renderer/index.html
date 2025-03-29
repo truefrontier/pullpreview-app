@@ -11,37 +11,54 @@
 <body>
   <div class="app">
     <header id="header" class="hidden">
-      <div class="header-row">
-        <div class="repo-info">
-          <div class="label">Repository:</div>
-          <div id="repo-path" class="value"></div>
+      <!-- Top toolbar with app controls -->
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <div class="repo-selector">
+            <i data-lucide="git-branch" class="toolbar-icon"></i>
+            <div class="repo-info">
+              <div id="repo-path" class="repo-path"></div>
+              <div class="branch-display">
+                <span id="current-branch" class="current-branch"></span>
+                <i data-lucide="arrow-right" class="arrow-icon"></i>
+                <select id="target-branch-select" class="target-branch-select"></select>
+              </div>
+            </div>
+          </div>
         </div>
         
-        <div class="controls">
-          <div class="auto-refresh-toggle">
-            <label class="switch">
-              <input type="checkbox" id="auto-refresh" checked>
-              <span class="slider round"></span>
-            </label>
-            <span>Auto-Refresh</span>
+        <div class="toolbar-right">
+          <div class="button-group">
+            <button id="refresh-button" class="toolbar-button hidden">
+              <i data-lucide="refresh-cw"></i>
+              <span>Refresh</span>
+            </button>
+            
+            <button id="change-repo-button" class="toolbar-button">
+              <i data-lucide="folder"></i>
+              <span>Change Repo</span>
+            </button>
+            
+            <div class="toggle-container">
+              <label class="toggle-switch" title="Auto-refresh when files change">
+                <input type="checkbox" id="auto-refresh" checked>
+                <span class="toggle-slider"></span>
+                <span class="toggle-label">Auto-Refresh</span>
+              </label>
+            </div>
           </div>
-          
-          <button id="refresh-button" class="hidden">
-            <i data-lucide="refresh-cw" width="16" height="16"></i>
-            Refresh
-          </button>
         </div>
       </div>
       
-      <div class="header-row">
-        <div class="branch-info">
-          <div class="label">Current Branch:</div>
-          <div id="current-branch" class="value"></div>
+      <!-- Status bar with additional information -->
+      <div class="status-bar">
+        <div class="status-message">
+          <i data-lucide="info" class="status-icon"></i>
+          <span id="status-text">Ready</span>
         </div>
-        
-        <div class="target-branch">
-          <div class="label">Target Branch:</div>
-          <select id="target-branch-select"></select>
+        <div class="last-updated">
+          <span>Last updated: </span>
+          <span id="last-updated-time">Just now</span>
         </div>
       </div>
     </header>
@@ -70,7 +87,7 @@
     
     <div id="error-toast" class="hidden">
       <div id="error-message"></div>
-      <button id="close-error">×</button>
+      <button id="close-error" aria-label="Close">×</button>
     </div>
   </div>
   
