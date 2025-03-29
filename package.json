@@ -26,7 +26,7 @@
     "simple-git": "^3.27.0"
   },
   "build": {
-    "appId": "com.classyllama.pullpreview",
+    "appId": "com.truefrontierapps.pullpreview",
     "productName": "PullPreview",
     "files": [
       "src/**/*",
