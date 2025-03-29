@@ -526,7 +526,7 @@ main {
   opacity: 1;
 }
 
-.file-header-left, .file-header-right {
+.file-header-left, .file-header-right, .file-header-far-right {
   display: flex;
   align-items: center;
 }
@@ -536,15 +536,23 @@ main {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  cursor: pointer;
 }
 
 .file-header-right {
   padding-left: 8px;
+  margin-right: 12px;
+}
+
+.file-header-far-right {
+  margin-left: auto;
+  cursor: pointer;
 }
 
 .expand-collapse-icon {
-  margin-right: 8px;
   flex-shrink: 0;
+  padding: 10px;
+  margin: -10px;
 }
 
 .binary-file-content {

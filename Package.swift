@@ -4,25 +4,25 @@
 import PackageDescription
 
 let package = Package(
-    name: "pr-preview-watcher",
+    name: "pull-preview",
     platforms: [
         .macOS(.v12)
     ],
     products: [
-        .executable(name: "PRPreviewWatcher", targets: ["PRPreviewWatcher"])
+        .executable(name: "PullPreview", targets: ["PullPreview"])
     ],
     dependencies: [
         // No external dependencies for now
     ],
     targets: [
         .executableTarget(
-            name: "PRPreviewWatcher",
+            name: "PullPreview",
             dependencies: [],
             resources: [
                 .copy("Resources/Fonts")
             ]),
         .testTarget(
-            name: "PRPreviewWatcherTests",
-            dependencies: ["PRPreviewWatcher"]),
+            name: "PullPreviewTests",
+            dependencies: ["PullPreview"]),
     ]
 )

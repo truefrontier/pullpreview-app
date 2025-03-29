@@ -1,4 +1,4 @@
-# PR Preview Watcher - Development Guidelines
+# PullPreview - Development Guidelines
 
 ## Build, Run & Test Commands
 - Build project: `swift build`

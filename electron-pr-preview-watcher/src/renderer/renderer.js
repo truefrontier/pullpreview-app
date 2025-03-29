@@ -41,8 +41,6 @@ let appState = {
   branches: [],
   isLoading: false,
   autoRefreshEnabled: true,
-  allFilesExpanded: true, // Default to expanded
-  expandedFiles: new Set(), // Track which files are expanded
   
   // Settings
   settings: {
@@ -174,47 +172,10 @@ function setupEventListeners() {
     }
   });
   
-  // Expand/Collapse All
-  elements.expandCollapseAll.addEventListener('click', () => {
-    try {
-      // Toggle global expansion state
-      appState.allFilesExpanded = !appState.allFilesExpanded;
-      
-      // Clear individual file states (to reset to the global state)
-      appState.expandedFiles.clear();
-      
-      // Update the button text and icon
-      updateExpandCollapseAllButton();
-      
-      // Apply to all files
-      const fileElements = elements.diffContainer.querySelectorAll('.diff-file');
-      fileElements.forEach(fileElement => {
-        const filePath = fileElement.dataset.filePath;
-        const contentElement = fileElement.querySelector('.diff-hunks, .binary-file-content');
-        const expandIcon = fileElement.querySelector('.expand-collapse-icon');
-        
-        if (contentElement) {
-          contentElement.style.display = appState.allFilesExpanded ? 'block' : 'none';
-        }
-        
-        if (expandIcon) {
-          // Safely update the icon attribute
-          expandIcon.setAttribute('data-lucide', appState.allFilesExpanded ? 'chevron-down' : 'chevron-right');
-          
-          // Refresh just this icon
-          if (lucideIcons) {
-            lucideIcons.createIcons({ elements: [expandIcon] });
-          } else if (window.lucide) {
-            window.lucide.createIcons({ elements: [expandIcon] });
-          }
-        }
-      });
-      
-      updateStatus(`All files ${appState.allFilesExpanded ? 'expanded' : 'collapsed'}`);
-    } catch (error) {
-      showError(`Error toggling expand/collapse: ${error.message}`);
-    }
-  });
+  // Hide the expand/collapse all button since we no longer need it
+  if (elements.expandCollapseAll) {
+    elements.expandCollapseAll.style.display = 'none';
+  }
   
   // Settings button - open settings modal
   elements.settingsButton.addEventListener('click', () => {
@@ -341,6 +302,8 @@ function setupIpcListeners() {
     appState.currentBranch = data.currentBranch;
     appState.targetBranch = data.targetBranch;
     appState.branches = data.branches;
+    
+    // We no longer need to load expanded files state since we've removed the expand/collapse feature
     
     // Hide loading state
     elements.loading.classList.add('hidden');
@@ -506,25 +469,10 @@ function truncatePath(path) {
   return `${start}/.../${end}`;
 }
 
-// Update the expand/collapse all button based on current state
+// This function is no longer needed, but we'll keep an empty version
+// to avoid errors in case it's called from elsewhere in the code
 function updateExpandCollapseAllButton() {
-  const buttonIcon = elements.expandCollapseAll.querySelector('i');
-  const buttonText = elements.expandCollapseAll.querySelector('span');
-  
-  if (appState.allFilesExpanded) {
-    buttonIcon.setAttribute('data-lucide', 'chevrons-up');
-    buttonText.textContent = 'Collapse All';
-  } else {
-    buttonIcon.setAttribute('data-lucide', 'chevrons-down');
-    buttonText.textContent = 'Expand All';
-  }
-  
-  // Refresh just this icon to ensure it updates
-  if (lucideIcons) {
-    lucideIcons.createIcons({ elements: [buttonIcon] });
-  } else if (window.lucide) {
-    window.lucide.createIcons({ elements: [buttonIcon] });
-  }
+  // Function intentionally left empty as expand/collapse feature has been removed
 }
 
 // Flag to prevent dropdown updates after saved branch is loaded
@@ -556,9 +504,6 @@ function updateUI() {
   // Update auto-refresh toggle
   elements.autoRefreshToggle.checked = appState.autoRefreshEnabled;
   elements.refreshButton.classList.toggle('hidden', appState.autoRefreshEnabled);
-  
-  // Update expand/collapse all button
-  updateExpandCollapseAllButton();
   
   // Force hide empty state when repository is loaded
   elements.emptyState.classList.toggle('hidden', appState.repositoryLoaded);
@@ -694,9 +639,8 @@ function createFileElement(file) {
   fileElement.className = 'diff-file';
   fileElement.dataset.filePath = file.path;
   
-  // Check if this file should be expanded or collapsed
-  const isExpanded = appState.expandedFiles.has(file.path) || 
-                    (appState.allFilesExpanded && !appState.expandedFiles.has(file.path));
+  // All files are always expanded now
+  const isExpanded = true;
   
   // Create file header
   const fileHeader = document.createElement('div');
@@ -711,26 +655,23 @@ function createFileElement(file) {
   fileNameSpan.textContent = file.path;
   fileHeaderLeft.appendChild(fileNameSpan);
   
-  // Right side with expand/collapse icon and external link icon
+  // Right side with external link icon only
   const fileHeaderRight = document.createElement('div');
   fileHeaderRight.className = 'file-header-right';
-  
-  // Add expand/collapse icon
-  const expandCollapseIcon = document.createElement('i');
-  expandCollapseIcon.setAttribute('data-lucide', isExpanded ? 'chevron-down' : 'chevron-right');
-  expandCollapseIcon.className = 'expand-collapse-icon';
-  expandCollapseIcon.style.marginRight = '12px';
   
   // Add external link icon
   const openFileIcon = document.createElement('i');
   openFileIcon.setAttribute('data-lucide', 'external-link');
-  
-  fileHeaderRight.appendChild(expandCollapseIcon);
   fileHeaderRight.appendChild(openFileIcon);
   
-  // Add both sides to header
+  // No more expand/collapse functionality, so we'll just create an empty element
+  const fileHeaderFarRight = document.createElement('div');
+  fileHeaderFarRight.className = 'file-header-far-right';
+  
+  // Add all sections to header
   fileHeader.appendChild(fileHeaderLeft);
   fileHeader.appendChild(fileHeaderRight);
+  fileHeader.appendChild(fileHeaderFarRight);
   
   // Add click handler to open file when clicking on left side (the filename area)
   fileHeaderLeft.addEventListener('click', async (event) => {
@@ -741,38 +682,8 @@ function createFileElement(file) {
     }
   });
   
-  // Add click handler to expand/collapse when clicking on the expand/collapse icon
-  expandCollapseIcon.addEventListener('click', (event) => {
-    // Toggle expanded state for this file
-    if (appState.expandedFiles.has(file.path)) {
-      appState.expandedFiles.delete(file.path);
-    } else {
-      appState.expandedFiles.add(file.path);
-    }
-    
-    // Toggle visibility of content
-    const hunksContainer = fileElement.querySelector('.diff-hunks');
-    const binaryContent = fileElement.querySelector('.binary-file-content');
-    const content = hunksContainer || binaryContent;
-    
-    if (content) {
-      const isNowExpanded = isFileExpanded(file.path);
-      content.style.display = isNowExpanded ? 'block' : 'none';
-      
-      // Update icon
-      expandCollapseIcon.setAttribute('data-lucide', isNowExpanded ? 'chevron-down' : 'chevron-right');
-      
-      // Refresh icon
-      if (lucideIcons) {
-        lucideIcons.createIcons({ elements: [expandCollapseIcon] });
-      } else if (window.lucide) {
-        window.lucide.createIcons({ elements: [expandCollapseIcon] });
-      }
-    }
-    
-    // Prevent event from bubbling up to the entire header
-    event.stopPropagation();
-  });
+  // We no longer need a click handler for the far right section 
+  // since we've removed the expand/collapse functionality
   
   // Add click handler to open file when clicking on the external link icon
   openFileIcon.addEventListener('click', async (event) => {
@@ -840,15 +751,11 @@ function createFileElement(file) {
   return fileElement;
 }
 
-// Helper to check if a file is currently expanded
+// This function is no longer needed, but we'll keep an empty version
+// to avoid errors in case it's called from elsewhere in the code
 function isFileExpanded(filePath) {
-  if (appState.allFilesExpanded) {
-    // If all files are expanded, this file is expanded unless it's in the expandedFiles set
-    return !appState.expandedFiles.has(filePath);
-  } else {
-    // If all files are collapsed, this file is expanded only if it's in the expandedFiles set
-    return appState.expandedFiles.has(filePath);
-  }
+  // Always return true since we removed expand/collapse functionality
+  return true;
 }
 
 // Create a hunk element for the diff

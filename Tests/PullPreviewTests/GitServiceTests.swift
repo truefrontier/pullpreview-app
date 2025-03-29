@@ -1,5 +1,5 @@
 import XCTest
-@testable import PRPreviewWatcher
+@testable import PullPreview
 
 final class GitServiceTests: XCTestCase {
     func testParsingDiffOutput() {

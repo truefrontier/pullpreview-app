@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self' 'unsafe-inline';">
-  <title>PR Preview Watcher</title>
+  <title>PullPreview</title>
   <link rel="stylesheet" href="styles.css">
   <script src="assets/lucide/umd/lucide.min.js"></script>
 </head>
@@ -30,8 +30,8 @@
         <div class="toolbar-right">
           <div class="button-group">
             <button id="expand-collapse-all" class="toolbar-button">
-              <i data-lucide="chevrons-down-up"></i>
-              <span>Expand All</span>
+              <i data-lucide="chevrons-up" class="expand-collapse-all-icon"></i>
+              <span>Collapse All</span>
             </button>
             
             <button id="refresh-button" class="toolbar-button hidden">

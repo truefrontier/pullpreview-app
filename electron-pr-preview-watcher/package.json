@@ -1,12 +1,14 @@
 {
-  "name": "pr-preview-watcher",
+  "name": "pull-preview",
   "version": "1.0.0",
   "description": "A tool for previewing git differences between branches before creating a pull request",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "electron-builder",
+    "pack": "electron-builder --dir"
   },
   "keywords": [
     "git",
@@ -22,5 +24,14 @@
     "electron-reload": "^2.0.0-alpha.1",
     "lucide": "^0.485.0",
     "simple-git": "^3.27.0"
+  },
+  "build": {
+    "appId": "com.classyllama.pullpreview",
+    "mac": {
+      "category": "public.app-category.developer-tools"
+    }
+  },
+  "devDependencies": {
+    "electron-builder": "^26.0.12"
   }
 }

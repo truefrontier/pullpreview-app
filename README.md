@@ -1,10 +1,10 @@
-**Project Title:** PR Preview Watcher
+**Project Title:** PullPreview
 
 **Version:** 1.0
 
 **1. Overview & Vision**
 
-PR Preview Watcher is a native macOS desktop application designed to streamline the developer workflow by providing a real-time, local preview of Git differences. It allows developers to visualize changes between their current working branch (including uncommitted modifications) and a selected target branch *before* creating a formal pull request. The application aims to offer a minimal, modern, and intuitive interface that mimics the core diff-viewing experience of platforms like GitHub/GitLab but operates entirely locally.
+PullPreview is a native macOS desktop application designed to streamline the developer workflow by providing a real-time, local preview of Git differences. It allows developers to visualize changes between their current working branch (including uncommitted modifications) and a selected target branch *before* creating a formal pull request. The application aims to offer a minimal, modern, and intuitive interface that mimics the core diff-viewing experience of platforms like GitHub/GitLab but operates entirely locally.
 
 **2. Target Platform & Technology**
 

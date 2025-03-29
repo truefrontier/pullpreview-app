@@ -15,7 +15,8 @@ let isAutoRefreshEnabled = true;
 // Settings storage
 let appSettings = {
   editorType: 'system',
-  customEditorPath: ''
+  customEditorPath: '',
+  expandedFiles: {} // Object to store expanded file states by repository path
 };
 
 function createWindow() {
@@ -75,6 +76,12 @@ function loadSettings() {
         
         // Apply settings
         appSettings = data.settings;
+        
+        // Ensure expandedFiles is initialized
+        if (!appSettings.expandedFiles) {
+          console.log('Initializing missing expandedFiles in settings');
+          appSettings.expandedFiles = {};
+        }
       }
       
       // Send settings to the renderer after a short delay to ensure it's ready
@@ -261,13 +268,27 @@ async function loadRepository(repoPath) {
       'utf8'
     );
     
+    // Get expanded files for this repository
+    let repoExpandedFiles = {};
+    
+    // Make sure expandedFiles exists
+    if (!appSettings.expandedFiles) {
+      appSettings.expandedFiles = {};
+    }
+    
+    // Safely access expandedFiles for this repository
+    if (repoPath && appSettings.expandedFiles[repoPath]) {
+      repoExpandedFiles = appSettings.expandedFiles[repoPath];
+    }
+    
     // Send repository information to renderer
     if (mainWindow) {
       mainWindow.webContents.send('repository-loaded', {
         path: repoPath,
         currentBranch,
         targetBranch, // Empty string, no branch selected by default
-        branches
+        branches,
+        expandedFiles: repoExpandedFiles
       });
     }
     
@@ -708,8 +729,20 @@ ipcMain.handle('open-file', async (event, filePath) => {
 // Save settings
 ipcMain.handle('save-settings', async (event, settings) => {
   try {
+    // Preserve expandedFiles when updating settings
+    const expandedFiles = appSettings.expandedFiles || {};
+    
     // Update app settings
     appSettings = settings;
+    
+    // Restore expandedFiles
+    appSettings.expandedFiles = expandedFiles;
+    
+    // Log the state after restore
+    console.log('Settings after preserving expandedFiles:', JSON.stringify({
+      hasExpandedFiles: !!appSettings.expandedFiles,
+      editorType: appSettings.editorType
+    }));
     
     // Load existing prefs to preserve other settings
     let userData = {};
@@ -724,7 +757,7 @@ ipcMain.handle('save-settings', async (event, settings) => {
     }
     
     // Update with new settings
-    userData.settings = settings;
+    userData.settings = appSettings;
     
     // Write updated preferences
     fs.writeFileSync(
@@ -739,6 +772,81 @@ ipcMain.handle('save-settings', async (event, settings) => {
     return { 
       success: false, 
       error: `Error saving settings: ${error.message}` 
+    };
+  }
+});
+
+// Save file expansion state
+ipcMain.handle('save-file-expansion-state', async (event, { filePath, isExpanded }) => {
+  try {
+    // Debug appSettings to see its current state
+    console.log('appSettings when saving file expansion state:', JSON.stringify({
+      hasExpandedFiles: !!appSettings.expandedFiles,
+      editorType: appSettings.editorType
+    }));
+    
+    if (!currentRepo) {
+      console.warn('Cannot save file expansion state: currentRepo is null');
+      return { success: false, error: 'No repository is loaded' };
+    }
+    
+    // Debug currentRepo to see its structure
+    console.log('Current repo structure:', JSON.stringify({
+      isObject: typeof currentRepo === 'object',
+      hasPath: currentRepo && 'path' in currentRepo,
+      repoPath: currentRepo.path
+    }));
+    
+    // Get repository path safely
+    const repoPath = currentRepo.path || (typeof currentRepo === 'string' ? currentRepo : null);
+    
+    // If we don't have a valid path, return early
+    if (!repoPath) {
+      console.warn('Cannot save file expansion state: repository path is undefined');
+      return { success: false, error: 'Repository path is undefined' };
+    }
+    
+    // Make sure expandedFiles exists
+    if (!appSettings.expandedFiles) {
+      appSettings.expandedFiles = {};
+    }
+    
+    // Initialize repository key if it doesn't exist
+    if (!appSettings.expandedFiles[repoPath]) {
+      appSettings.expandedFiles[repoPath] = {};
+    }
+    
+    // Save the expanded state for this file
+    appSettings.expandedFiles[repoPath][filePath] = isExpanded;
+    
+    // Save to preferences file
+    const userDataPath = path.join(app.getPath('userData'), 'prefs.json');
+    let userData = {};
+    
+    if (fs.existsSync(userDataPath)) {
+      try {
+        userData = JSON.parse(fs.readFileSync(userDataPath, 'utf8'));
+      } catch (e) {
+        console.warn('Error reading prefs file, will overwrite:', e);
+      }
+    }
+    
+    // Update with new settings
+    userData.settings = appSettings;
+    
+    // Write updated preferences
+    fs.writeFileSync(
+      userDataPath,
+      JSON.stringify(userData),
+      'utf8'
+    );
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Error saving file expansion state:', error);
+    return { 
+      success: false, 
+      error: `Error saving file expansion state: ${error.message}` 
     };
   }
 });

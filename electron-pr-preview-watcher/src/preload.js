@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld('api', {
   // Settings operations
   saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
   selectEditorPath: () => ipcRenderer.invoke('select-editor-path'),
+  saveFileExpansionState: (data) => ipcRenderer.invoke('save-file-expansion-state', data),
   
   // Events
   onRepositoryLoading: (callback) =>

@@ -23,25 +23,28 @@ struct DiffFileView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Button {
-                appState.openFile(at: file.path)
-            } label: {
-                HStack {
+            HStack {
+                Button {
+                    appState.openFile(at: file.path)
+                } label: {
                     Text(file.path)
                         .font(.system(.headline, design: .monospaced))
                         .foregroundColor(.primary)
-                    
-                    Spacer()
-                    
-                    Image(systemName: "arrow.up.forward.square")
-                        .foregroundColor(.secondary)
                 }
-                .padding(.vertical, 8)
-                .padding(.horizontal, 12)
-                .background(Color(.controlBackgroundColor))
-                .cornerRadius(4)
+                .buttonStyle(.plain)
+                
+                Spacer()
+                
+                Image(systemName: "arrow.up.forward.square")
+                    .foregroundColor(.secondary)
+                    .onTapGesture {
+                        appState.openFile(at: file.path)
+                    }
             }
-            .buttonStyle(.plain)
+            .padding(.vertical, 8)
+            .padding(.horizontal, 12)
+            .background(Color(.controlBackgroundColor))
+            .cornerRadius(4)
             
             if file.isBinary {
                 Text("Binary file changed")
