@@ -324,14 +324,17 @@ function setupIpcListeners() {
   window.api.onDiffResult((diffData) => {
     renderDiff(diffData);
     
-    // Make sure we hide the select branch message and update the UI properly
+    // Always hide empty state and select branch message
+    elements.emptyState.classList.add('hidden');
     elements.selectBranch.classList.add('hidden');
     
     if (diffData && diffData.length > 0) {
+      // We have differences to show
       elements.noDifferences.classList.add('hidden');
       elements.diffContainer.classList.remove('hidden');
       updateStatus(`Showing ${diffData.length} changed file${diffData.length === 1 ? '' : 's'}`, 'success');
     } else {
+      // No differences found
       elements.diffContainer.classList.add('hidden');
       elements.noDifferences.classList.remove('hidden');
       updateStatus('No differences found', 'success');
@@ -426,10 +429,14 @@ function updateExpandCollapseAllButton() {
 
 // Update UI based on application state
 function updateUI() {
-  // Update header
+  // Update header visibility based on repository loaded state
   elements.header.classList.toggle('hidden', !appState.repositoryLoaded);
-  elements.repoPath.textContent = appState.repositoryLoaded ? appState.repositoryPath : '';
-  elements.currentBranch.textContent = appState.currentBranch;
+  
+  // Update header content
+  if (appState.repositoryLoaded) {
+    elements.repoPath.textContent = appState.repositoryPath;
+    elements.currentBranch.textContent = appState.currentBranch;
+  }
   
   // Update branches dropdown
   updateBranchesDropdown();
@@ -441,20 +448,23 @@ function updateUI() {
   // Update expand/collapse all button
   updateExpandCollapseAllButton();
   
+  // Force hide empty state when repository is loaded
+  elements.emptyState.classList.toggle('hidden', appState.repositoryLoaded);
+  
   // Update main content visibility
   if (!appState.repositoryLoaded) {
-    // Show empty state when no repository is loaded
-    elements.emptyState.classList.remove('hidden');
+    // No repository loaded - just show empty state
     elements.selectBranch.classList.add('hidden');
     elements.loading.classList.add('hidden');
     elements.noDifferences.classList.add('hidden');
     elements.diffContainer.classList.add('hidden');
   } else {
-    // Repository is loaded
+    // Repository is loaded - ensure empty state is hidden
     elements.emptyState.classList.add('hidden');
     
-    // Show "select branch" message if no target branch is selected
+    // Determine what to show next
     if (!appState.targetBranch) {
+      // No target branch selected - show select branch prompt
       elements.selectBranch.classList.remove('hidden');
       elements.loading.classList.add('hidden');
       elements.noDifferences.classList.add('hidden');
@@ -474,9 +484,23 @@ function updateUI() {
 function updateLoadingState() {
   // Only update these states if we have a target branch selected
   if (appState.targetBranch) {
+    // Always make sure the empty state is hidden
+    elements.emptyState.classList.add('hidden');
+    
+    // Show loading spinner when loading
     elements.loading.classList.toggle('hidden', !appState.isLoading);
-    elements.noDifferences.classList.toggle('hidden', appState.isLoading || elements.diffContainer.children.length > 0);
-    elements.diffContainer.classList.toggle('hidden', appState.isLoading || elements.diffContainer.children.length === 0);
+    
+    // Show no differences message when appropriate
+    elements.noDifferences.classList.toggle('hidden', 
+      appState.isLoading || // Hide when loading
+      elements.diffContainer.children.length > 0 // Hide when we have diffs to show
+    );
+    
+    // Show diff container when we have content and aren't loading
+    elements.diffContainer.classList.toggle('hidden', 
+      appState.isLoading || // Hide when loading
+      elements.diffContainer.children.length === 0 // Hide when empty
+    );
   }
 }
 
@@ -506,17 +530,24 @@ function updateBranchesDropdown() {
 
 // Render diff data
 function renderDiff(diffData) {
+  // Clear current diff container content
   elements.diffContainer.innerHTML = '';
   
+  // Always make sure the empty state is hidden
+  elements.emptyState.classList.add('hidden');
+  
   if (!diffData || diffData.length === 0) {
+    // No differences found
     elements.noDifferences.classList.remove('hidden');
     elements.diffContainer.classList.add('hidden');
     return;
   }
   
+  // We have differences to show
   elements.noDifferences.classList.add('hidden');
   elements.diffContainer.classList.remove('hidden');
   
+  // Create and append file elements
   diffData.forEach(file => {
     const fileElement = createFileElement(file);
     elements.diffContainer.appendChild(fileElement);
