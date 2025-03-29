@@ -198,16 +198,17 @@ function setupEventListeners() {
         }
         
         if (expandIcon) {
+          // Safely update the icon attribute
           expandIcon.setAttribute('data-lucide', appState.allFilesExpanded ? 'chevron-down' : 'chevron-right');
+          
+          // Refresh just this icon
+          if (lucideIcons) {
+            lucideIcons.createIcons({ elements: [expandIcon] });
+          } else if (window.lucide) {
+            window.lucide.createIcons({ elements: [expandIcon] });
+          }
         }
       });
-      
-      // Refresh icons
-      if (lucideIcons) {
-        lucideIcons.createIcons();
-      } else if (window.lucide) {
-        window.lucide.createIcons();
-      }
       
       updateStatus(`All files ${appState.allFilesExpanded ? 'expanded' : 'collapsed'}`);
     } catch (error) {
@@ -511,6 +512,13 @@ function updateExpandCollapseAllButton() {
     buttonIcon.setAttribute('data-lucide', 'chevrons-down');
     buttonText.textContent = 'Expand All';
   }
+  
+  // Refresh just this icon to ensure it updates
+  if (lucideIcons) {
+    lucideIcons.createIcons({ elements: [buttonIcon] });
+  } else if (window.lucide) {
+    window.lucide.createIcons({ elements: [buttonIcon] });
+  }
 }
 
 // Flag to prevent dropdown updates after saved branch is loaded
@@ -688,37 +696,47 @@ function createFileElement(file) {
   const fileHeader = document.createElement('div');
   fileHeader.className = 'file-header';
   
-  // Left side with expand/collapse and filename
+  // Left side with filename only
   const fileHeaderLeft = document.createElement('div');
   fileHeaderLeft.className = 'file-header-left';
+  
+  // Add filename
+  const fileNameSpan = document.createElement('span');
+  fileNameSpan.textContent = file.path;
+  fileHeaderLeft.appendChild(fileNameSpan);
+  
+  // Right side with expand/collapse icon and external link icon
+  const fileHeaderRight = document.createElement('div');
+  fileHeaderRight.className = 'file-header-right';
   
   // Add expand/collapse icon
   const expandCollapseIcon = document.createElement('i');
   expandCollapseIcon.setAttribute('data-lucide', isExpanded ? 'chevron-down' : 'chevron-right');
   expandCollapseIcon.className = 'expand-collapse-icon';
-  expandCollapseIcon.style.marginRight = '8px';
+  expandCollapseIcon.style.marginRight = '12px';
   
-  // Add filename
-  const fileNameSpan = document.createElement('span');
-  fileNameSpan.textContent = file.path;
-  
-  fileHeaderLeft.appendChild(expandCollapseIcon);
-  fileHeaderLeft.appendChild(fileNameSpan);
-  
-  // Right side with external link icon
-  const fileHeaderRight = document.createElement('div');
-  fileHeaderRight.className = 'file-header-right';
-  
+  // Add external link icon
   const openFileIcon = document.createElement('i');
   openFileIcon.setAttribute('data-lucide', 'external-link');
+  
+  fileHeaderRight.appendChild(expandCollapseIcon);
   fileHeaderRight.appendChild(openFileIcon);
   
   // Add both sides to header
   fileHeader.appendChild(fileHeaderLeft);
   fileHeader.appendChild(fileHeaderRight);
   
-  // Add click handler to expand/collapse when clicking on left side
-  fileHeaderLeft.addEventListener('click', (event) => {
+  // Add click handler to open file when clicking on left side (the filename area)
+  fileHeaderLeft.addEventListener('click', async (event) => {
+    try {
+      await window.api.openFile(file.path);
+    } catch (error) {
+      showError(`Error opening file: ${error.message}`);
+    }
+  });
+  
+  // Add click handler to expand/collapse when clicking on the expand/collapse icon
+  expandCollapseIcon.addEventListener('click', (event) => {
     // Toggle expanded state for this file
     if (appState.expandedFiles.has(file.path)) {
       appState.expandedFiles.delete(file.path);
@@ -750,8 +768,8 @@ function createFileElement(file) {
     event.stopPropagation();
   });
   
-  // Add click handler to open file when clicking on right side
-  fileHeaderRight.addEventListener('click', async (event) => {
+  // Add click handler to open file when clicking on the external link icon
+  openFileIcon.addEventListener('click', async (event) => {
     try {
       await window.api.openFile(file.path);
       event.stopPropagation();
