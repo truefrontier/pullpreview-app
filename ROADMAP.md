@@ -1,12 +1,39 @@
-# Electron PR Preview Watcher Wishlist Features
+# PR Preview Watcher Roadmap
 
-- [x] Expand/Collapse selected or all files
-- [x] Persist opened repo and selected branch after closing App
-  - [] expanded/collapsed by filename (not filepath) should persist across every repo that's opened
-- [] Enable window tabs to open new repos
-- [x] Add settings
-	- [x] Select the code editor you want to open files with
-	- [] Add keyboard shortcuts
+## Current Development Priorities
+
+### Usability Improvements
+- [ ] Fix repository loading UX
+  - Show loading state when reopening a previously saved repository 
+  - Remove confusing "select repo" message when loading saved repo data
+- [ ] Improve file expansion/collapse behavior
+  - Move expand/collapse icon to the right side of the file header
+  - Make the entire filepath clickable to open the file (restore original behavior)
+  - Fix icon state to properly indicate expanded/collapsed state
+  - Fix "Expand All" button (currently shows error: "Cannot read properties of null (reading 'setAttribute')")
+  - Rename "Expand All" to "Collapse All" when files are expanded
+
+### Persistence Improvements
+- [ ] Persist settings across app sessions
+  - Save preferred code editor setting between app restarts
+  - Store file expansion state by filename across all repositories
+- [ ] Add keyboard shortcuts
+
+### Feature Additions
+- [ ] Enable window tabs to open multiple repositories
+- [ ] Implement side-by-side diff view (from Future Enhancements)
+
+## Future Enhancements
+
+These items are planned for future releases based on the project specification:
+
+- Compare arbitrary commits/tags
+- Stage/unstage changes directly in the app
+- Configurable refresh intervals
+- Support for multiple repository windows or tabs
+- Syntax highlighting within diff content based on file type
+- Handling of Git LFS objects
+- Improved binary file diff display
 
 # Changelog
 
