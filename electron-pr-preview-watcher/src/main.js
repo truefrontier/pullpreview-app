@@ -55,9 +55,49 @@ function createWindow() {
   // We'll always prompt the user to select one first
 }
 
+// Load saved repository if available
+async function loadSavedRepository() {
+  try {
+    const userDataPath = path.join(app.getPath('userData'), 'prefs.json');
+    if (fs.existsSync(userDataPath)) {
+      const data = JSON.parse(fs.readFileSync(userDataPath, 'utf8'));
+      
+      // Check if we have a saved repository path
+      if (data.lastRepository && fs.existsSync(data.lastRepository)) {
+        const isValid = await validateRepository(data.lastRepository);
+        
+        if (isValid) {
+          await loadRepository(data.lastRepository);
+          
+          // If we have a saved target branch, set it
+          if (data.lastTargetBranch) {
+            // We need to wait a short time to let the UI update before setting the target branch
+            setTimeout(() => {
+              if (mainWindow) {
+                mainWindow.webContents.send('set-target-branch', {
+                  branch: data.lastTargetBranch
+                });
+              }
+            }, 500);
+          }
+          
+          return true;
+        }
+      }
+    }
+    return false;
+  } catch (error) {
+    console.error('Error loading saved repository:', error);
+    return false;
+  }
+}
+
 // This method will be called when Electron has finished initialization
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   createWindow();
+  
+  // Try to load the saved repository
+  await loadSavedRepository();
 
   app.on('activate', () => {
     // On macOS it's common to re-create a window in the app when the dock icon is clicked
@@ -124,11 +164,24 @@ async function loadRepository(repoPath) {
     const targetBranch = "";
     
     // Save repository path in preferences
-    const userData = {
-      lastRepository: repoPath
-    };
+    // Load existing prefs to preserve any other settings
+    let userData = {};
+    const userDataPath = path.join(app.getPath('userData'), 'prefs.json');
+    
+    if (fs.existsSync(userDataPath)) {
+      try {
+        userData = JSON.parse(fs.readFileSync(userDataPath, 'utf8'));
+      } catch (e) {
+        console.warn('Error reading prefs file, will overwrite:', e);
+      }
+    }
+    
+    // Update with new repository path
+    userData.lastRepository = repoPath;
+    
+    // Write updated preferences
     fs.writeFileSync(
-      path.join(app.getPath('userData'), 'prefs.json'),
+      userDataPath,
       JSON.stringify(userData),
       'utf8'
     );
@@ -464,6 +517,28 @@ ipcMain.handle('set-target-branch', async (event, branch) => {
   if (!currentRepo) return { success: false };
   
   try {
+    // Save target branch in preferences
+    const userDataPath = path.join(app.getPath('userData'), 'prefs.json');
+    let userData = {};
+    
+    if (fs.existsSync(userDataPath)) {
+      try {
+        userData = JSON.parse(fs.readFileSync(userDataPath, 'utf8'));
+      } catch (e) {
+        console.warn('Error reading prefs file:', e);
+      }
+    }
+    
+    // Update with the new target branch
+    userData.lastTargetBranch = branch;
+    
+    // Write updated preferences
+    fs.writeFileSync(
+      userDataPath,
+      JSON.stringify(userData),
+      'utf8'
+    );
+    
     generateDiff(branch);
     setupAutoRefresh(branch);
     return { success: true };

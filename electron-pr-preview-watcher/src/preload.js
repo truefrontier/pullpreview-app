@@ -33,6 +33,9 @@ contextBridge.exposeInMainWorld('api', {
   onBranchChanged: (callback) => 
     ipcRenderer.on('branch-changed', (_, data) => callback(data)),
     
+  onSetTargetBranch: (callback) =>
+    ipcRenderer.on('set-target-branch', (_, data) => callback(data)),
+    
   // Cleanup function for removing event listeners
   removeAllListeners: () => {
     ipcRenderer.removeAllListeners('repository-loaded');
@@ -40,5 +43,6 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.removeAllListeners('diff-result');
     ipcRenderer.removeAllListeners('error');
     ipcRenderer.removeAllListeners('branch-changed');
+    ipcRenderer.removeAllListeners('set-target-branch');
   }
 });

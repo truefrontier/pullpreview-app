@@ -251,6 +251,25 @@ function setupIpcListeners() {
     // Show a warning to the user
     updateStatus(`Target branch changed to "${data.targetBranch}" (previous selection was not found)`, 'warning');
   });
+  
+  // Set target branch (when loading from saved preferences)
+  window.api.onSetTargetBranch((data) => {
+    console.log(`Setting target branch from preferences: ${data.branch}`);
+    
+    // Set the target branch in the dropdown if it exists
+    if (data.branch && appState.branches.includes(data.branch)) {
+      // Update application state
+      appState.targetBranch = data.branch;
+      
+      // Update UI to show the selected branch
+      updateTargetBranchSelect();
+      
+      // Trigger a branch change to load the diff
+      elements.targetBranchSelect.dispatchEvent(new Event('change'));
+      
+      updateStatus(`Loaded saved branch: ${data.branch}`);
+    }
+  });
 }
 
 // Update just the target branch dropdown
