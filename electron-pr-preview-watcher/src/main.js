@@ -119,38 +119,9 @@ async function loadRepository(repoPath) {
     console.log(`Current branch: ${currentBranch}`);
     console.log(`Available branches: ${branches.join(', ')}`);
     
-    // Find a suitable target branch
-    // First try common branch names, then fallback to the first branch that's not the current one
-    let targetBranch = null;
-    
-    // Verify the branches array contains valid entries
-    if (!branches || branches.length === 0) {
-      console.warn("No branches found, using current branch as fallback");
-      targetBranch = currentBranch;
-    } else {
-      // Try common branch names first
-      const commonBranches = ['main', 'master', 'develop', 'development', 'staging'];
-      for (const branch of commonBranches) {
-        if (branches.includes(branch) && branch !== currentBranch) {
-          console.log(`Using common branch: ${branch}`);
-          targetBranch = branch;
-          break;
-        }
-      }
-      
-      // If no common branch found, use the first branch that's not the current one
-      if (!targetBranch) {
-        const alternateBranch = branches.find(branch => branch !== currentBranch);
-        if (alternateBranch) {
-          console.log(`Using alternate branch: ${alternateBranch}`);
-          targetBranch = alternateBranch;
-        } else {
-          // Last resort - use the current branch
-          console.log(`Using current branch as fallback: ${currentBranch}`);
-          targetBranch = currentBranch;
-        }
-      }
-    }
+    // We don't select a default target branch anymore
+    // This avoids potentially large diffs when first opening a repository
+    const targetBranch = "";
     
     // Save repository path in preferences
     const userData = {
@@ -167,16 +138,14 @@ async function loadRepository(repoPath) {
       mainWindow.webContents.send('repository-loaded', {
         path: repoPath,
         currentBranch,
-        targetBranch,
+        targetBranch, // Empty string, no branch selected by default
         branches
       });
     }
     
-    // Set up auto-refresh
-    setupAutoRefresh(targetBranch);
-    
-    // Generate initial diff
-    generateDiff(targetBranch);
+    // Set up auto-refresh, but don't generate diff yet
+    // (we'll wait for the user to select a branch)
+    setupAutoRefresh();
     
   } catch (error) {
     console.error('Error loading repository:', error);
@@ -295,17 +264,24 @@ function setupAutoRefresh(targetBranch) {
   
   if (!currentRepo || !isAutoRefreshEnabled) return;
   
-  // Instead of watching all files, we'll periodically check git status
-  // This is much more efficient for large repositories
-  
-  // First check - start immediately
-  checkGitStatusAndRefresh(targetBranch);
+  // Skip initial check if no target branch is provided
+  if (targetBranch) {
+    // First check - start immediately
+    checkGitStatusAndRefresh(targetBranch);
+  }
   
   // Set up periodic check for both local changes and remote changes
   refreshTimer = setInterval(async () => {
     try {
       if (currentRepo) {
-        checkGitStatusAndRefresh(targetBranch);
+        // Get the latest target branch from UI state
+        // This is needed because targetBranch might be empty initially
+        const branch = targetBranch; // If provided externally
+        
+        // Only run checks if we have a valid target branch
+        if (branch && branch.trim() !== '') {
+          checkGitStatusAndRefresh(branch);
+        }
       }
     } catch (error) {
       console.error('Error in periodic refresh:', error);

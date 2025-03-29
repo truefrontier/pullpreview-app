@@ -9,6 +9,7 @@ const elements = {
   selectRepoButton: document.getElementById('select-repo-button'),
   changeRepoButton: document.getElementById('change-repo-button'),
   emptyState: document.getElementById('empty-state'),
+  selectBranch: document.getElementById('select-branch'),
   loading: document.getElementById('loading'),
   noDifferences: document.getElementById('no-differences'),
   diffContainer: document.getElementById('diff-container'),
@@ -87,6 +88,11 @@ function setupEventListeners() {
       const selectedBranch = elements.targetBranchSelect.value;
       appState.targetBranch = selectedBranch;
       
+      // Update UI immediately to hide the "select branch" message
+      elements.selectBranch.classList.add('hidden');
+      elements.loading.classList.remove('hidden');
+      updateStatus(`Comparing against branch: ${selectedBranch}...`);
+      
       const result = await window.api.setTargetBranch(selectedBranch);
       if (!result.success && result.error) {
         showError(result.error);
@@ -150,9 +156,19 @@ function setupIpcListeners() {
   // Diff loading state
   window.api.onDiffLoading((isLoading) => {
     appState.isLoading = isLoading;
-    updateLoadingState();
     
+    // Always hide select branch message when loading
+    if (appState.targetBranch) {
+      elements.selectBranch.classList.add('hidden');
+    }
+    
+    // Show/hide loading spinner
+    elements.loading.classList.toggle('hidden', !isLoading);
+    
+    // Hide other elements when loading
     if (isLoading) {
+      elements.noDifferences.classList.add('hidden');
+      elements.diffContainer.classList.add('hidden');
       updateStatus('Loading diff...');
     }
   });
@@ -161,9 +177,16 @@ function setupIpcListeners() {
   window.api.onDiffResult((diffData) => {
     renderDiff(diffData);
     
+    // Make sure we hide the select branch message and update the UI properly
+    elements.selectBranch.classList.add('hidden');
+    
     if (diffData && diffData.length > 0) {
+      elements.noDifferences.classList.add('hidden');
+      elements.diffContainer.classList.remove('hidden');
       updateStatus(`Showing ${diffData.length} changed file${diffData.length === 1 ? '' : 's'}`, 'success');
     } else {
+      elements.diffContainer.classList.add('hidden');
+      elements.noDifferences.classList.remove('hidden');
       updateStatus('No differences found', 'success');
     }
   });
@@ -239,29 +262,56 @@ function updateUI() {
   if (!appState.repositoryLoaded) {
     // Show empty state when no repository is loaded
     elements.emptyState.classList.remove('hidden');
+    elements.selectBranch.classList.add('hidden');
     elements.loading.classList.add('hidden');
     elements.noDifferences.classList.add('hidden');
     elements.diffContainer.classList.add('hidden');
   } else {
-    // Hide empty state when a repository is loaded
+    // Repository is loaded
     elements.emptyState.classList.add('hidden');
-    // Other states will be handled by updateLoadingState
+    
+    // Show "select branch" message if no target branch is selected
+    if (!appState.targetBranch) {
+      elements.selectBranch.classList.remove('hidden');
+      elements.loading.classList.add('hidden');
+      elements.noDifferences.classList.add('hidden');
+      elements.diffContainer.classList.add('hidden');
+      
+      // Update status text to guide the user
+      updateStatus('Please select a target branch to compare against', 'info');
+    } else {
+      // Target branch is selected, handle other states
+      elements.selectBranch.classList.add('hidden');
+      updateLoadingState();
+    }
   }
-  
-  updateLoadingState();
 }
 
 // Update loading state
 function updateLoadingState() {
-  elements.loading.classList.toggle('hidden', !appState.isLoading);
-  elements.noDifferences.classList.toggle('hidden', appState.isLoading || elements.diffContainer.children.length > 0);
-  elements.diffContainer.classList.toggle('hidden', appState.isLoading || elements.diffContainer.children.length === 0);
+  // Only update these states if we have a target branch selected
+  if (appState.targetBranch) {
+    elements.loading.classList.toggle('hidden', !appState.isLoading);
+    elements.noDifferences.classList.toggle('hidden', appState.isLoading || elements.diffContainer.children.length > 0);
+    elements.diffContainer.classList.toggle('hidden', appState.isLoading || elements.diffContainer.children.length === 0);
+  }
 }
 
 // Update branches dropdown
 function updateBranchesDropdown() {
   elements.targetBranchSelect.innerHTML = '';
   
+  // Add a placeholder/prompt option
+  if (!appState.targetBranch) {
+    const placeholderOption = document.createElement('option');
+    placeholderOption.value = "";
+    placeholderOption.textContent = "-- Select a branch --";
+    placeholderOption.selected = true;
+    placeholderOption.disabled = true;
+    elements.targetBranchSelect.appendChild(placeholderOption);
+  }
+  
+  // Add all available branches
   appState.branches.forEach(branch => {
     const option = document.createElement('option');
     option.value = branch;
