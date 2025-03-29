@@ -8,10 +8,10 @@ PR Preview Watcher is a native macOS desktop application designed to streamline 
 
 **2. Target Platform & Technology**
 
-* **OS:** macOS 13.0 (Ventura) or later.
+* **OS:** macOS 13.0 (Ventura) or later (Apple Silicon or Intel).
 * **Technology:**
     * **Primary:** Native macOS using **Swift** and **SwiftUI**. This is strongly preferred for optimal performance, system integration, and adherence to macOS design principles.
-    * **Alternative (Less Preferred):** Electron.js could be considered if cross-platform potential becomes a future priority, but native is the target for V1.
+    * **Alternative (Implemented):** Electron.js version available for compatibility across different macOS versions and architectures.
 * **Architecture:** Standard macOS application architecture (e.g., MVVM with SwiftUI).
 
 **3. Core Features**
