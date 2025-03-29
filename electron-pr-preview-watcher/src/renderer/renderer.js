@@ -384,15 +384,25 @@ function setupIpcListeners() {
       // Update application state
       appState.targetBranch = data.branch;
       
+      // Mark initialization as complete to prevent dropdown resets
+      initialLoadComplete = true;
+      
       // Update UI to show the selected branch
       updateTargetBranchSelect();
       
       // Add a small delay to ensure the UI is fully updated before loading the diff
       setTimeout(() => {
-        // Trigger a branch change to load the diff
-        elements.targetBranchSelect.dispatchEvent(new Event('change'));
-        
-        updateStatus(`Loaded saved branch: ${data.branch}`);
+        // Don't trigger a change event as it would reset UI state
+        // Just manually generate the diff using API
+        window.api.setTargetBranch(data.branch).then(result => {
+          if (result.success) {
+            updateStatus(`Loaded saved branch: ${data.branch}`);
+          } else if (result.error) {
+            showError(result.error);
+          }
+        }).catch(error => {
+          showError(`Error setting target branch: ${error.message}`);
+        });
       }, 100);
     }
   });
@@ -400,19 +410,37 @@ function setupIpcListeners() {
 
 // Update just the target branch dropdown
 function updateTargetBranchSelect() {
-  // Find the currently selected option
+  // Do nothing if we don't have a target branch
+  if (!appState.targetBranch) {
+    return;
+  }
+  
+  console.log(`Updating target branch dropdown to show: ${appState.targetBranch}`);
+  
+  // Find if target branch is already in the options
   const options = [...elements.targetBranchSelect.options];
   const targetBranchIndex = options.findIndex(opt => opt.value === appState.targetBranch);
   
   if (targetBranchIndex >= 0) {
+    // Option exists, just select it
     elements.targetBranchSelect.selectedIndex = targetBranchIndex;
+    console.log(`Selected existing option at index ${targetBranchIndex}`);
   } else if (appState.branches.includes(appState.targetBranch)) {
-    // If it doesn't exist in the dropdown but is in our branches list, add it
+    // If option doesn't exist in dropdown but branch exists, add it
     const option = document.createElement('option');
     option.value = appState.targetBranch;
     option.textContent = appState.targetBranch;
     option.selected = true;
     elements.targetBranchSelect.appendChild(option);
+    console.log(`Added new option for ${appState.targetBranch}`);
+  } else {
+    console.warn(`Target branch ${appState.targetBranch} is not in available branches list`);
+  }
+  
+  // Double check that something is selected
+  if (elements.targetBranchSelect.selectedIndex === -1 && options.length > 0) {
+    console.warn('No option selected after update, forcing selection of first option');
+    elements.targetBranchSelect.selectedIndex = 0;
   }
 }
 
@@ -447,6 +475,9 @@ function updateExpandCollapseAllButton() {
   }
 }
 
+// Flag to prevent dropdown updates after saved branch is loaded
+let initialLoadComplete = false;
+
 // Update UI based on application state
 function updateUI() {
   // Update header visibility based on repository loaded state
@@ -458,8 +489,17 @@ function updateUI() {
     elements.currentBranch.textContent = appState.currentBranch;
   }
   
-  // Update branches dropdown
-  updateBranchesDropdown();
+  // Only update branches dropdown during initial load
+  // This prevents resetting the dropdown after we've restored a saved selection
+  if (!initialLoadComplete) {
+    updateBranchesDropdown();
+    
+    // If we have a target branch already set, mark initialization as complete
+    if (appState.targetBranch) {
+      console.log(`Initial UI load complete with target branch: ${appState.targetBranch}`);
+      initialLoadComplete = true;
+    }
+  }
   
   // Update auto-refresh toggle
   elements.autoRefreshToggle.checked = appState.autoRefreshEnabled;
