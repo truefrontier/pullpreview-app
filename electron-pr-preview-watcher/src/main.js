@@ -70,15 +70,22 @@ function loadSettings() {
       
       // Load settings if they exist
       if (data.settings) {
+        // Log what we're loading to help debug
+        console.log('Loading saved settings:', JSON.stringify(data.settings));
+        
+        // Apply settings
         appSettings = data.settings;
       }
       
-      // Send settings to the renderer
-      if (mainWindow) {
-        mainWindow.webContents.send('settings-loaded', {
-          settings: appSettings
-        });
-      }
+      // Send settings to the renderer after a short delay to ensure it's ready
+      setTimeout(() => {
+        if (mainWindow) {
+          console.log('Sending settings to renderer:', JSON.stringify(appSettings));
+          mainWindow.webContents.send('settings-loaded', {
+            settings: appSettings
+          });
+        }
+      }, 500);
     }
   } catch (error) {
     console.error('Error loading settings:', error);

@@ -311,7 +311,13 @@ function setupIpcListeners() {
   // Settings loaded
   window.api.onSettingsLoaded((data) => {
     if (data.settings) {
+      console.log('Received settings from main process:', data.settings);
+      
+      // Update app state
       appState.settings = data.settings;
+      
+      // Log the current application settings
+      console.log('Current app settings after update:', appState.settings);
     }
   });
   
