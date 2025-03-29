@@ -17,7 +17,8 @@ const elements = {
   errorMessage: document.getElementById('error-message'),
   closeError: document.getElementById('close-error'),
   statusText: document.getElementById('status-text'),
-  lastUpdatedTime: document.getElementById('last-updated-time')
+  lastUpdatedTime: document.getElementById('last-updated-time'),
+  expandCollapseAll: document.getElementById('expand-collapse-all')
 };
 
 // Application state
@@ -28,7 +29,9 @@ let appState = {
   targetBranch: '',
   branches: [],
   isLoading: false,
-  autoRefreshEnabled: true
+  autoRefreshEnabled: true,
+  allFilesExpanded: true, // Default to expanded
+  expandedFiles: new Set() // Track which files are expanded
 };
 
 // Import Lucide icons
@@ -125,6 +128,47 @@ function setupEventListeners() {
       }
     } catch (error) {
       showError(`Error refreshing diff: ${error.message}`);
+    }
+  });
+  
+  // Expand/Collapse All
+  elements.expandCollapseAll.addEventListener('click', () => {
+    try {
+      // Toggle global expansion state
+      appState.allFilesExpanded = !appState.allFilesExpanded;
+      
+      // Clear individual file states (to reset to the global state)
+      appState.expandedFiles.clear();
+      
+      // Update the button text and icon
+      updateExpandCollapseAllButton();
+      
+      // Apply to all files
+      const fileElements = elements.diffContainer.querySelectorAll('.diff-file');
+      fileElements.forEach(fileElement => {
+        const filePath = fileElement.dataset.filePath;
+        const contentElement = fileElement.querySelector('.diff-hunks, .binary-file-content');
+        const expandIcon = fileElement.querySelector('.expand-collapse-icon');
+        
+        if (contentElement) {
+          contentElement.style.display = appState.allFilesExpanded ? 'block' : 'none';
+        }
+        
+        if (expandIcon) {
+          expandIcon.setAttribute('data-lucide', appState.allFilesExpanded ? 'chevron-down' : 'chevron-right');
+        }
+      });
+      
+      // Refresh icons
+      if (lucideIcons) {
+        lucideIcons.createIcons();
+      } else if (window.lucide) {
+        window.lucide.createIcons();
+      }
+      
+      updateStatus(`All files ${appState.allFilesExpanded ? 'expanded' : 'collapsed'}`);
+    } catch (error) {
+      showError(`Error toggling expand/collapse: ${error.message}`);
     }
   });
   
@@ -244,6 +288,20 @@ function truncatePath(path) {
   return `${start}/.../${end}`;
 }
 
+// Update the expand/collapse all button based on current state
+function updateExpandCollapseAllButton() {
+  const buttonIcon = elements.expandCollapseAll.querySelector('i');
+  const buttonText = elements.expandCollapseAll.querySelector('span');
+  
+  if (appState.allFilesExpanded) {
+    buttonIcon.setAttribute('data-lucide', 'chevrons-up');
+    buttonText.textContent = 'Collapse All';
+  } else {
+    buttonIcon.setAttribute('data-lucide', 'chevrons-down');
+    buttonText.textContent = 'Expand All';
+  }
+}
+
 // Update UI based on application state
 function updateUI() {
   // Update header
@@ -257,6 +315,9 @@ function updateUI() {
   // Update auto-refresh toggle
   elements.autoRefreshToggle.checked = appState.autoRefreshEnabled;
   elements.refreshButton.classList.toggle('hidden', appState.autoRefreshEnabled);
+  
+  // Update expand/collapse all button
+  updateExpandCollapseAllButton();
   
   // Update main content visibility
   if (!appState.repositoryLoaded) {
@@ -344,19 +405,83 @@ function renderDiff(diffData) {
 function createFileElement(file) {
   const fileElement = document.createElement('div');
   fileElement.className = 'diff-file';
+  fileElement.dataset.filePath = file.path;
+  
+  // Check if this file should be expanded or collapsed
+  const isExpanded = appState.expandedFiles.has(file.path) || 
+                    (appState.allFilesExpanded && !appState.expandedFiles.has(file.path));
   
   // Create file header
   const fileHeader = document.createElement('div');
   fileHeader.className = 'file-header';
-  fileHeader.innerHTML = `
-    <span>${file.path}</span>
-    <i data-lucide="external-link" width="16" height="16"></i>
-  `;
   
-  // Add click handler to open file
-  fileHeader.addEventListener('click', async () => {
+  // Left side with expand/collapse and filename
+  const fileHeaderLeft = document.createElement('div');
+  fileHeaderLeft.className = 'file-header-left';
+  
+  // Add expand/collapse icon
+  const expandCollapseIcon = document.createElement('i');
+  expandCollapseIcon.setAttribute('data-lucide', isExpanded ? 'chevron-down' : 'chevron-right');
+  expandCollapseIcon.className = 'expand-collapse-icon';
+  expandCollapseIcon.style.marginRight = '8px';
+  
+  // Add filename
+  const fileNameSpan = document.createElement('span');
+  fileNameSpan.textContent = file.path;
+  
+  fileHeaderLeft.appendChild(expandCollapseIcon);
+  fileHeaderLeft.appendChild(fileNameSpan);
+  
+  // Right side with external link icon
+  const fileHeaderRight = document.createElement('div');
+  fileHeaderRight.className = 'file-header-right';
+  
+  const openFileIcon = document.createElement('i');
+  openFileIcon.setAttribute('data-lucide', 'external-link');
+  fileHeaderRight.appendChild(openFileIcon);
+  
+  // Add both sides to header
+  fileHeader.appendChild(fileHeaderLeft);
+  fileHeader.appendChild(fileHeaderRight);
+  
+  // Add click handler to expand/collapse when clicking on left side
+  fileHeaderLeft.addEventListener('click', (event) => {
+    // Toggle expanded state for this file
+    if (appState.expandedFiles.has(file.path)) {
+      appState.expandedFiles.delete(file.path);
+    } else {
+      appState.expandedFiles.add(file.path);
+    }
+    
+    // Toggle visibility of content
+    const hunksContainer = fileElement.querySelector('.diff-hunks');
+    const binaryContent = fileElement.querySelector('.binary-file-content');
+    const content = hunksContainer || binaryContent;
+    
+    if (content) {
+      const isNowExpanded = isFileExpanded(file.path);
+      content.style.display = isNowExpanded ? 'block' : 'none';
+      
+      // Update icon
+      expandCollapseIcon.setAttribute('data-lucide', isNowExpanded ? 'chevron-down' : 'chevron-right');
+      
+      // Refresh icon
+      if (lucideIcons) {
+        lucideIcons.createIcons({ elements: [expandCollapseIcon] });
+      } else if (window.lucide) {
+        window.lucide.createIcons({ elements: [expandCollapseIcon] });
+      }
+    }
+    
+    // Prevent event from bubbling up to the entire header
+    event.stopPropagation();
+  });
+  
+  // Add click handler to open file when clicking on right side
+  fileHeaderRight.addEventListener('click', async (event) => {
     try {
       await window.api.openFile(file.path);
+      event.stopPropagation();
     } catch (error) {
       showError(`Error opening file: ${error.message}`);
     }
@@ -369,6 +494,12 @@ function createFileElement(file) {
     const binaryContent = document.createElement('div');
     binaryContent.className = 'binary-file-content';
     binaryContent.textContent = 'Binary file changed';
+    
+    // Apply initial expand/collapse state
+    if (!isExpanded) {
+      binaryContent.style.display = 'none';
+    }
+    
     fileElement.appendChild(binaryContent);
     return fileElement;
   }
@@ -376,6 +507,11 @@ function createFileElement(file) {
   // Create diff hunks container
   const hunksContainer = document.createElement('div');
   hunksContainer.className = 'diff-hunks';
+  
+  // Apply initial expand/collapse state
+  if (!isExpanded) {
+    hunksContainer.style.display = 'none';
+  }
   
   // Create hunks
   file.hunks.forEach(hunk => {
@@ -405,6 +541,17 @@ function createFileElement(file) {
   }
   
   return fileElement;
+}
+
+// Helper to check if a file is currently expanded
+function isFileExpanded(filePath) {
+  if (appState.allFilesExpanded) {
+    // If all files are expanded, this file is expanded unless it's in the expandedFiles set
+    return !appState.expandedFiles.has(filePath);
+  } else {
+    // If all files are collapsed, this file is expanded only if it's in the expandedFiles set
+    return appState.expandedFiles.has(filePath);
+  }
 }
 
 // Create a hunk element for the diff

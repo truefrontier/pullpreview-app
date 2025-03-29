@@ -526,6 +526,27 @@ main {
   opacity: 1;
 }
 
+.file-header-left, .file-header-right {
+  display: flex;
+  align-items: center;
+}
+
+.file-header-left {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-header-right {
+  padding-left: 8px;
+}
+
+.expand-collapse-icon {
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
 .binary-file-content {
   padding: 12px;
   font-family: 'Hack', monospace;
