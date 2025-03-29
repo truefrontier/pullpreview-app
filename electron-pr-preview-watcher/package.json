@@ -1,0 +1,20 @@
+{
+  "name": "pr-preview-watcher",
+  "version": "1.0.0",
+  "description": "A tool for previewing git differences between branches before creating a pull request",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["git", "diff", "preview", "electron"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "chokidar": "^4.0.3",
+    "electron": "^35.1.2",
+    "electron-reload": "^2.0.0-alpha.1",
+    "simple-git": "^3.27.0"
+  }
+}

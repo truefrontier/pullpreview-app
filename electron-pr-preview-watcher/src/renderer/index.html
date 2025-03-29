@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:;">
+  <title>PR Preview Watcher</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <header id="header" class="hidden">
+      <div class="header-row">
+        <div class="repo-info">
+          <div class="label">Repository:</div>
+          <div id="repo-path" class="value"></div>
+        </div>
+        
+        <div class="controls">
+          <div class="auto-refresh-toggle">
+            <label class="switch">
+              <input type="checkbox" id="auto-refresh" checked>
+              <span class="slider round"></span>
+            </label>
+            <span>Auto-Refresh</span>
+          </div>
+          
+          <button id="refresh-button" class="hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+            </svg>
+            Refresh
+          </button>
+        </div>
+      </div>
+      
+      <div class="header-row">
+        <div class="branch-info">
+          <div class="label">Current Branch:</div>
+          <div id="current-branch" class="value"></div>
+        </div>
+        
+        <div class="target-branch">
+          <div class="label">Target Branch:</div>
+          <select id="target-branch-select"></select>
+        </div>
+      </div>
+    </header>
+    
+    <main>
+      <div id="empty-state" class="centered-content">
+        <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+          <line x1="12" y1="11" x2="12" y2="17"/>
+          <line x1="9" y1="14" x2="15" y2="14"/>
+        </svg>
+        <h2>No Repository Selected</h2>
+        <p>Select a Git repository to view differences</p>
+        <button id="select-repo-button" class="primary-button">Open Repository...</button>
+      </div>
+      
+      <div id="loading" class="centered-content hidden">
+        <div class="spinner"></div>
+        <p>Loading diff...</p>
+      </div>
+      
+      <div id="no-differences" class="centered-content hidden">
+        <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        <h2>No Differences Found</h2>
+        <p>Your branch is up to date with the target branch</p>
+      </div>
+      
+      <div id="diff-container" class="hidden"></div>
+    </main>
+    
+    <div id="error-toast" class="hidden">
+      <div id="error-message"></div>
+      <button id="close-error">×</button>
+    </div>
+  </div>
+  
+  <script src="renderer.js"></script>
+</body>
+</html>

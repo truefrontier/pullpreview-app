@@ -1,0 +1,415 @@
+/* Font imports */
+@font-face {
+  font-family: 'Hack';
+  src: url('../fonts/Hack-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Hack';
+  src: url('../fonts/Hack-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Hack';
+  src: url('../fonts/Hack-Italic.ttf') format('truetype');
+  font-weight: normal;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'Hack';
+  src: url('../fonts/Hack-BoldItalic.ttf') format('truetype');
+  font-weight: bold;
+  font-style: italic;
+}
+
+/* Reset and base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --background-color: #ffffff;
+  --text-color: #333333;
+  --secondary-text-color: #666666;
+  --border-color: #dddddd;
+  --header-background: #f5f5f5;
+  --addition-background: rgba(46, 160, 67, 0.15);
+  --deletion-background: rgba(248, 81, 73, 0.15);
+  --control-background: #ffffff;
+  --button-background: #f5f5f5;
+  --button-hover: #e5e5e5;
+  --primary-button-background: #0366d6;
+  --primary-button-hover: #0256b4;
+  --primary-button-text: #ffffff;
+  --error-background: #ffdddd;
+  --error-text: #cc0000;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background-color: #1e1e1e;
+    --text-color: #e0e0e0;
+    --secondary-text-color: #aaaaaa;
+    --border-color: #444444;
+    --header-background: #2d2d2d;
+    --addition-background: rgba(46, 160, 67, 0.2);
+    --deletion-background: rgba(248, 81, 73, 0.2);
+    --control-background: #3c3c3c;
+    --button-background: #3c3c3c;
+    --button-hover: #4c4c4c;
+    --primary-button-background: #0366d6;
+    --primary-button-hover: #0679ff;
+    --primary-button-text: #ffffff;
+    --error-background: #552222;
+    --error-text: #ff8888;
+  }
+}
+
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  height: 100%;
+  color: var(--text-color);
+  background-color: var(--background-color);
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding-top: 28px; /* Account for macOS traffic lights */
+}
+
+/* Header styles */
+header {
+  background-color: var(--header-background);
+  border-bottom: 1px solid var(--border-color);
+  padding: 10px 16px;
+  font-size: 12px;
+  user-select: none;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.header-row:last-child {
+  margin-bottom: 0;
+}
+
+.label {
+  color: var(--secondary-text-color);
+  margin-right: 4px;
+}
+
+.value {
+  font-weight: 500;
+}
+
+.repo-info, .branch-info {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#repo-path {
+  max-width: 600px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+}
+
+.auto-refresh-toggle {
+  display: flex;
+  align-items: center;
+  margin-right: 12px;
+  cursor: pointer;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 34px;
+  height: 18px;
+  margin-right: 6px;
+}
+
+.switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #2196F3;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+  transform: translateX(16px);
+}
+
+.slider.round {
+  border-radius: 18px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+button {
+  padding: 6px 10px;
+  background-color: var(--button-background);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background-color 0.2s;
+}
+
+button svg {
+  margin-right: 4px;
+}
+
+button:hover {
+  background-color: var(--button-hover);
+}
+
+.primary-button {
+  background-color: var(--primary-button-background);
+  color: var(--primary-button-text);
+  border: none;
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.primary-button:hover {
+  background-color: var(--primary-button-hover);
+}
+
+select {
+  padding: 4px 8px;
+  background-color: var(--control-background);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-color);
+  font-size: 12px;
+  min-width: 150px;
+}
+
+/* Main content styles */
+main {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+}
+
+.centered-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  color: var(--secondary-text-color);
+}
+
+.centered-content svg {
+  stroke: var(--secondary-text-color);
+  margin-bottom: 16px;
+}
+
+.centered-content h2 {
+  margin-bottom: 8px;
+  color: var(--text-color);
+}
+
+.centered-content p {
+  margin-bottom: 24px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-left-color: var(--primary-button-background);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Diff styles */
+#diff-container {
+  padding: 16px;
+}
+
+.diff-file {
+  margin-bottom: 24px;
+}
+
+.file-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background-color: var(--header-background);
+  border: 1px solid var(--border-color);
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  cursor: pointer;
+  font-family: 'Hack', monospace;
+  font-size: 13px;
+}
+
+.file-header:hover {
+  background-color: var(--button-hover);
+}
+
+.file-header svg {
+  opacity: 0.5;
+}
+
+.file-header:hover svg {
+  opacity: 1;
+}
+
+.binary-file-content {
+  padding: 12px;
+  font-family: 'Hack', monospace;
+  border: 1px solid var(--border-color);
+  border-top: none;
+  background-color: var(--background-color);
+  color: var(--secondary-text-color);
+}
+
+.diff-hunks {
+  border: 1px solid var(--border-color);
+  border-top: none;
+  font-family: 'Hack', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.hunk-header {
+  padding: 2px 8px;
+  background-color: var(--header-background);
+  color: var(--secondary-text-color);
+  font-size: 12px;
+}
+
+.diff-line {
+  display: flex;
+}
+
+.diff-line-number {
+  width: 40px;
+  text-align: right;
+  padding: 0 8px;
+  user-select: none;
+  color: var(--secondary-text-color);
+  border-right: 1px solid var(--border-color);
+}
+
+.diff-line-content {
+  padding: 0 8px;
+  white-space: pre;
+}
+
+.diff-line.addition {
+  background-color: var(--addition-background);
+}
+
+.diff-line.deletion {
+  background-color: var(--deletion-background);
+}
+
+/* Error toast */
+#error-toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: var(--error-background);
+  color: var(--error-text);
+  padding: 12px 16px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  max-width: 400px;
+  z-index: 1000;
+}
+
+#error-message {
+  flex: 1;
+  margin-right: 12px;
+}
+
+#close-error {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--error-text);
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Utility classes */
+.hidden {
+  display: none !important;
+}
