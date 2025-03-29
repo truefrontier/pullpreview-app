@@ -31,6 +31,7 @@ function createWindow() {
     },
     titleBarStyle: 'hiddenInset',
     show: false, // Don't show until loaded
+    icon: path.join(__dirname, 'icons/mac/icon.png'), // Window icon
   });
 
   // and load the index.html of the app
@@ -173,6 +174,11 @@ async function loadSavedRepository() {
 
 // This method will be called when Electron has finished initialization
 app.whenReady().then(async () => {
+  // Set the dock icon on macOS
+  if (process.platform === 'darwin') {
+    app.dock.setIcon(path.join(__dirname, 'icons/mac/icon.png'));
+  }
+  
   createWindow();
   
   // Load settings first

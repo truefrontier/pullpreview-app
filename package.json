@@ -8,7 +8,8 @@
     "dev": "electron . --dev",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "electron-builder",
-    "pack": "electron-builder --dir"
+    "pack": "electron-builder --dir",
+    "generate-icons": "./generate-mac-icons.sh"
   },
   "keywords": [
     "git",
@@ -20,18 +21,30 @@
   "license": "MIT",
   "dependencies": {
     "chokidar": "^4.0.3",
-    "electron": "^35.1.2",
     "electron-reload": "^2.0.0-alpha.1",
     "lucide": "^0.485.0",
     "simple-git": "^3.27.0"
   },
   "build": {
     "appId": "com.classyllama.pullpreview",
+    "productName": "PullPreview",
+    "files": [
+      "src/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "buildResources": "src/icons"
+    },
     "mac": {
-      "category": "public.app-category.developer-tools"
+      "category": "public.app-category.developer-tools",
+      "icon": "src/icons/mac/icon.icns",
+      "darkModeSupport": true,
+      "target": ["dmg", "zip"]
     }
   },
   "devDependencies": {
+    "electron": "^35.1.2",
     "electron-builder": "^26.0.12"
   }
 }

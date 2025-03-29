@@ -1,106 +1,97 @@
-**Project Title:** PullPreview
+# PullPreview
 
-**Version:** 1.0
+![PullPreview Logo](/PullPreviewLogo.png)
 
-**1. Overview & Vision**
+## Overview
 
-PullPreview is a native macOS desktop application designed to streamline the developer workflow by providing a real-time, local preview of Git differences. It allows developers to visualize changes between their current working branch (including uncommitted modifications) and a selected target branch *before* creating a formal pull request. The application aims to offer a minimal, modern, and intuitive interface that mimics the core diff-viewing experience of platforms like GitHub/GitLab but operates entirely locally.
+PullPreview is a cross-platform desktop application designed to streamline the developer workflow by providing a real-time, local preview of Git differences. It allows developers to visualize changes between their current working branch (including uncommitted modifications) and a selected target branch *before* creating a formal pull request. The application offers a minimal, modern, and intuitive interface that mimics the core diff-viewing experience of platforms like GitHub/GitLab but operates entirely locally.
 
-**2. Target Platform & Technology**
+## Platform & Technology
 
-* **OS:** macOS 13.0 (Ventura) or later (Apple Silicon or Intel).
-* **Technology:**
-    * **Primary:** Native macOS using **Swift** and **SwiftUI**. This is strongly preferred for optimal performance, system integration, and adherence to macOS design principles.
-    * **Alternative (Implemented):** Electron.js version available for compatibility across different macOS versions and architectures.
-* **Architecture:** Standard macOS application architecture (e.g., MVVM with SwiftUI).
+* **Supported OS:** macOS, Windows, and Linux
+* **Built with:** Electron.js
+* **Current version:** 1.0.0
 
-**3. Core Features**
+## Features
 
-* **3.1. Repository Selection & Validation:**
-    * On first launch or when no repository is active, present a standard macOS folder selection dialog.
-    * Validate the selected folder contains a `.git` directory.
-    * Display a user-friendly error message and re-prompt if the selection is not a valid Git repository root.
-    * Persist the path of the last successfully opened repository (`UserDefaults`) for quicker access on subsequent launches.
+### Repository Selection & Validation
+* Select any Git repository on your file system
+* Validation ensures the selected folder contains a valid `.git` directory
+* The application remembers your last opened repository for convenience
 
-* **3.2. Branch Selection:**
-    * Upon valid repository selection, display the main application window.
-    * Automatically detect and display the *current* active branch (`git rev-parse --abbrev-ref HEAD`). Update this if the branch changes externally (detected via refresh/watch).
-    * Provide a clear UI element (e.g., dropdown) to select the *target* branch for comparison.
-    * Populate the target branch list with local and remote-tracking branches (`git branch -a`), clearly distinguishing them (e.g., `main`, `develop`, `origin/main`). Fetching may be required (`git fetch --prune`) initially or periodically to ensure the list is up-to-date.
-    * Persist the selected target branch per repository (`UserDefaults`).
+### Branch Selection
+* Automatically detects and displays your current active branch
+* Select any target branch for comparison from a dropdown menu
+* Supports both local and remote-tracking branches
 
-* **3.3. Git Diff Preview Display:**
-    * Generate and display the diff between the **current working tree** (including staged and unstaged changes) of the active branch and the **HEAD** of the selected *target* branch. (Command equivalent: `git diff <selected_target_branch> --`).
-    * Present the diff in a clear, scrollable view:
-        * List changed files.
-        * Show additions (+) and deletions (-) with distinct visual cues (e.g., background colors - light green/red).
-        * Include context lines for readability.
-        * Use the **Hack** monospaced font (currently at the root of this project; feel free to move) for the diff view content. The app should attempt to locate Hack in the system's font directory; if not found, it should fall back gracefully to a default system monospaced font (e.g., Menlo) and perhaps notify the user. Consider bundling the font if system detection is unreliable.
+### Git Diff Preview Display
+* Real-time display of differences between your working branch and the target branch
+* Clear, scrollable view of all changed files
+* Visual indicators for additions and deletions with appropriate color coding
+* Syntax highlighting using the Hack monospaced font for improved readability
 
-* **3.4. Refresh Mechanism (Automatic & Manual):**
-    * Include an "Auto-Refresh" toggle switch (persisted state via `UserDefaults`).
-    * **Auto-Refresh ON:**
-        * **Local Changes:** Monitor the repository directory using macOS FSEvents API. Upon detecting changes (file saves, deletions, etc.), re-generate the diff after a short debounce period (e.g., 500ms-1s) to prevent excessive updates.
-        * **Remote Changes:** Periodically (e.g., every 1-5 minutes, configurable or fixed) run `git fetch <remote> <target_branch>` for the target branch in the background. If the fetched commit hash differs from the last known hash, re-generate the diff. Provide subtle visual feedback during fetch.
-    * **Auto-Refresh OFF:**
-        * Display a manual "Refresh" button.
-        * Clicking "Refresh" triggers both a local diff regeneration and a remote `git fetch` check for the target branch, then updates the view. Provide visual feedback during refresh.
+### Auto-Refresh Functionality
+* Toggle automatic refresh on or off according to your preference
+* When enabled, the diff view updates automatically when:
+  * Local files change in your repository
+  * Remote changes are detected on the target branch
+* Manual refresh button available when auto-refresh is disabled
 
-* **3.5. Open File in External Editor:**
-    * Make file paths/names listed in the diff view interactive (e.g., clickable headers above each file's diff).
-    * On click, construct the absolute file path (Repo Root + Relative Path from diff) and use `NSWorkspace.shared.open()` (or SwiftUI equivalent) to open the file in the system's default application for that file type.
+### External Editor Integration
+* Click on any file in the diff view to open it in your default editor
+* Seamlessly transition from reviewing changes to making edits
 
-**4. UI/UX Design**
+## User Interface
 
-* **Aesthetic:** Minimal, clean, and modern, adhering to contemporary macOS design guidelines.
-* **Color Scheme:** Full support for macOS **Light and Dark Modes**, automatically adapting to the system appearance setting. Use standard system colors and materials where appropriate.
-* **Layout:**
-    * Single primary window.
-    * Clear header displaying repository path, current branch, and selected target branch.
-    * Prominently placed Auto-Refresh toggle and Manual Refresh button (conditional visibility).
-    * Main area dedicated to the scrollable diff view.
-* **Diff View Styling:**
-    * Use the **Hack** font (or fallback) for diff text.
-    * Employ distinct but non-jarring background colors for added (+) and removed (-) lines, consistent with typical diff viewer conventions (e.g., light green/red). Ensure good contrast in both Light and Dark modes.
-* **Feedback:** Provide clear visual indicators for loading states (e.g., fetching, calculating diff), success, errors, and empty states (e.g., "No differences found"). Use non-modal notifications or status bar text where appropriate.
+* Modern, clean design that follows desktop application standards
+* Full support for both light and dark modes across all platforms
+* Clear header showing repository path, current branch, and target branch
+* Intuitive controls for auto-refresh and manual refresh options
+* Responsive layout that adapts to different window sizes
 
-**5. Technical Requirements**
+## Technical Details
 
-* **Git Interaction:**
-    * Option A (Recommended): Execute `git` CLI commands via `Process` asynchronously. Requires robust parsing of stdout/stderr and assumes `git` is in the user's PATH.
-    * Option B: Integrate a Swift Git library (e.g., `SwiftGit2`). Adds dependency but offers more structured interaction.
-    * All Git operations must run on background threads (GCD, Swift Concurrency) to keep the UI responsive.
-* **File System Monitoring:** Use FSEvents API directly or via a reliable wrapper. Implement debouncing for change events.
-* **Diff Parsing/Rendering:** Parse raw `git diff` output. Use `AttributedString` in SwiftUI for basic styling (colors) or investigate dedicated diff rendering views if needed for performance with very large diffs.
-* **Font Handling:** Implement logic to detect the Hack font. If bundling, ensure proper font registration.
-* **Performance:** Optimize for large repositories and large diffs. Consider virtualization or lazy loading for the diff view if performance becomes an issue. Async operations are critical.
-* **Persistence:** Use `UserDefaults` for storing repository path, target branch selections (per repo), and the auto-refresh toggle state.
-* **Error Handling:** Gracefully handle potential errors: invalid repo, Git command failures, network errors during fetch, file permission issues, file not found on open, missing Hack font. Display clear, non-technical error messages to the user.
+* Built with Electron.js for cross-platform compatibility
+* Uses simple-git for reliable Git integration
+* File system monitoring via chokidar for real-time updates
+* Persistence of preferences and recently used repositories
+* Graceful error handling for all Git operations and edge cases
 
-**6. Edge Cases**
+## Installation & Usage
 
-* Repository in a conflicted state. (Diff command might fail; report error).
-* Repository with submodules (V1 likely ignores submodule changes unless explicitly included in diff).
-* Newly initialized repository with no commits or branches.
-* Binary file changes (Diff output is different; display simply "Binary file changed" or similar).
+### Prerequisites
+* Git must be installed and accessible in your PATH
+* Node.js 16+ (if building from source)
 
-**7. Deliverables**
+### Download & Install
+Download the latest version for your platform from the releases page.
 
-* Source code repository (e.g., GitHub) with README (setup, build, run instructions).
-* Packaged macOS application (.app bundle, potentially within a .dmg installer).
+### Running from Source
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/pull-preview.git
 
-**8. Testing Strategy**
+# Install dependencies
+cd pull-preview
+npm install
 
-* **Unit Tests:** For Git output parsing, diff logic, state management.
-* **Integration Tests:** Simulating user flows (selecting repo, branches, refresh).
-* **Manual Testing:** Across different macOS versions (Ventura+), various repository sizes/states, different file types, light/dark modes, with/without Hack font installed, network connectivity variations.
+# Start the application
+npm start
 
-**9. Future Enhancements (Post-V1)**
+# For development with hot reloading
+npm run dev
+```
 
-* Side-by-side diff view option.
-* Support for comparing arbitrary commits/tags.
-* Ability to stage/unstage changes directly.
-* Configurable refresh intervals.
-* Support for multiple repository windows or tabs.
-* Syntax highlighting within the diff content based on file type.
-* Handling of Git LFS objects.
+### Building from Source
+```bash
+# Build for your current platform
+npm run build
+```
+
+## Roadmap
+
+See our [ROADMAP.md](/ROADMAP.md) file for upcoming features and enhancements.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
