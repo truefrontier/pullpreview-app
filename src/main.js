@@ -130,21 +130,22 @@ async function loadSavedRepository() {
                 console.log(`Setting target branch from saved preferences: ${data.lastTargetBranch}`);
                 
                 // First check if the target branch exists
-                currentRepo.git.branch().then(branchInfo => {
-                  const allBranches = [...branchInfo.all];
+                getAllBranches().then(branches => {
+                  console.log(`Available branches for comparison: ${branches.join(', ')}`);
                   
-                  if (allBranches.includes(data.lastTargetBranch)) {
+                  if (branches.includes(data.lastTargetBranch)) {
+                    console.log(`Found saved branch in available branches: ${data.lastTargetBranch}`);
                     mainWindow.webContents.send('set-target-branch', {
                       branch: data.lastTargetBranch
                     });
                   } else {
-                    console.warn(`Saved target branch "${data.lastTargetBranch}" not found in available branches`);
+                    console.warn(`Saved target branch "${data.lastTargetBranch}" not found in available branches: [${branches.join(', ')}]`);
                   }
                 }).catch(err => {
                   console.error("Error checking branches before setting target branch:", err);
                 });
               }
-            }, 1000); // Increased from 500ms to 1000ms
+            }, 1500); // Increased delay to ensure all UI components are ready
           }
           
           return true;

@@ -438,8 +438,14 @@ function setupIpcListeners() {
       // Mark initialization as complete to prevent dropdown resets
       initialLoadComplete = true;
       
+      // Log current branches in dropdown for debugging
+      console.log(`Branches in dropdown before selection: ${[...elements.targetBranchSelect.options].map(opt => opt.value).join(', ')}`);
+      
       // Update UI to show the selected branch
       updateTargetBranchSelect();
+      
+      // Log current selection for debugging
+      console.log(`After updateTargetBranchSelect: selectedIndex=${elements.targetBranchSelect.selectedIndex}, value=${elements.targetBranchSelect.value}`);
       
       // Add a small delay to ensure the UI is fully updated before loading the diff
       setTimeout(() => {
@@ -448,13 +454,23 @@ function setupIpcListeners() {
         window.api.setTargetBranch(data.branch).then(result => {
           if (result.success) {
             updateStatus(`Loaded saved branch: ${data.branch}`);
+            
+            // Double-check that we have the right branch selected
+            if (elements.targetBranchSelect.value !== data.branch) {
+              console.warn(`Branch mismatch: dropdown shows ${elements.targetBranchSelect.value} but should be ${data.branch}, fixing...`);
+              elements.targetBranchSelect.value = data.branch;
+              appState.targetBranch = data.branch;
+            }
           } else if (result.error) {
             showError(result.error);
           }
         }).catch(error => {
           showError(`Error setting target branch: ${error.message}`);
         });
-      }, 100);
+      }, 200); // Increased delay for better reliability
+    } else {
+      console.warn(`Cannot set target branch from preferences: branch=${data.branch}, exists in branches=${appState.branches.includes(data.branch)}`);
+      console.log(`Available branches: ${appState.branches.join(', ')}`);
     }
   });
 }
@@ -493,6 +509,12 @@ function updateTargetBranchSelect() {
     console.warn('No option selected after update, forcing selection of first option');
     elements.targetBranchSelect.selectedIndex = 0;
   }
+  
+  // Save branch selection in app state explicitly, in case it changed
+  appState.targetBranch = elements.targetBranchSelect.value;
+  
+  // For diagnostic purposes
+  console.log(`Target branch dropdown updated, selected value: ${elements.targetBranchSelect.value}`);
 }
 
 
