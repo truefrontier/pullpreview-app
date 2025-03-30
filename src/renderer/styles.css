@@ -590,13 +590,16 @@ main {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  cursor: pointer;
 }
 
+/* Style for filename */
+.file-header-left span {
+  cursor: pointer;
+  transition: text-decoration 0.2s;
+}
 
-.file-header-right {
-  padding-left: 8px;
-  margin-right: 12px;
+.file-header-left span:hover {
+  text-decoration: underline;
 }
 
 .file-header-far-right {

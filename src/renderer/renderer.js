@@ -767,15 +767,6 @@ function createFileElement(file) {
   // Add filename to left side
   fileHeaderLeft.appendChild(fileNameSpan);
   
-  // Right side with external link icon only
-  const fileHeaderRight = document.createElement('div');
-  fileHeaderRight.className = 'file-header-right';
-  
-  // Add external link icon
-  const openFileIcon = document.createElement('i');
-  openFileIcon.setAttribute('data-lucide', 'external-link');
-  fileHeaderRight.appendChild(openFileIcon);
-  
   // Far right with expand/collapse icon
   const fileHeaderFarRight = document.createElement('div');
   fileHeaderFarRight.className = 'file-header-far-right';
@@ -791,7 +782,6 @@ function createFileElement(file) {
   
   // Add all sections to header
   fileHeader.appendChild(fileHeaderLeft);
-  fileHeader.appendChild(fileHeaderRight);
   fileHeader.appendChild(fileHeaderFarRight);
   
   // Click handler ONLY for the far right section (with chevron) to toggle expand/collapse
@@ -808,18 +798,8 @@ function createFileElement(file) {
     event.stopPropagation();
   });
   
-  // Add click handler to open file when clicking on left side (the filename area)
-  fileHeaderLeft.addEventListener('click', async (event) => {
-    try {
-      await window.api.openFile(file.path);
-      event.stopPropagation();
-    } catch (error) {
-      showError(`Error opening file: ${error.message}`);
-    }
-  });
-  
-  // Add click handler to open file when clicking on the external link icon
-  openFileIcon.addEventListener('click', async (event) => {
+  // Add click handler to open file when clicking on the filename
+  fileNameSpan.addEventListener('click', async (event) => {
     try {
       await window.api.openFile(file.path);
       event.stopPropagation();
