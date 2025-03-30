@@ -512,15 +512,15 @@ function truncatePath(path) {
   return `${start}/.../${end}`;
 }
 
-// Update the expand/collapse all button based on current file states
-function checkExpandedState() {
+// Update the expand/collapse link based on current file states
+function updateCollapseExpandLink() {
   const fileElements = [...elements.diffContainer.children];
   if (fileElements.length === 0) return;
   
   // Check if all files are expanded
   const allExpanded = fileElements.every(el => el.dataset.expanded === 'true');
   
-  // Update button text/icon accordingly
+  // Update link text accordingly
   updateExpandCollapseAllButton(allExpanded);
 }
 
@@ -687,8 +687,8 @@ function renderDiff(diffData) {
   // Update sort dropdown to match the current sort order
   elements.sortDropdown.value = appState.sortOrder;
   
-  // Update expand/collapse all button after rendering files
-  checkExpandedState();
+  // Update expand/collapse all link after rendering files
+  updateCollapseExpandLink();
 }
 
 // Sort files based on the specified order
@@ -943,6 +943,10 @@ function toggleFileExpansion(fileElement, expand) {
   if (hunksContainer) {
     hunksContainer.style.display = expand ? '' : 'none';
   }
+  
+  // Check overall state of all files and update the expand/collapse link
+  // We do this after a short delay to ensure dataset is updated
+  setTimeout(updateCollapseExpandLink, 0);
 }
 
 // Toggle all files' expansion state
@@ -962,34 +966,18 @@ function toggleAllFiles() {
     saveFileExpansionState(filePath, newState);
   });
   
-  // Update the expand/collapse all button text and icon
+  // Update the expand/collapse link text
   updateExpandCollapseAllButton(!allExpanded);
 }
 
-// Update the expand/collapse all link text, icon and tooltip
+// Update the expand/collapse all link text and tooltip
 function updateExpandCollapseAllButton(expanding) {
-  const buttonIcon = elements.expandCollapseAll.querySelector('i');
-  const buttonText = elements.expandCollapseAll.querySelector('span');
-  
   if (expanding) {
     elements.expandCollapseAll.title = 'Collapse all files';
-    buttonIcon.setAttribute('data-lucide', 'chevrons-up');
-    buttonText.textContent = 'Collapse all';
+    elements.expandCollapseAll.textContent = 'Collapse all';
   } else {
     elements.expandCollapseAll.title = 'Expand all files';
-    buttonIcon.setAttribute('data-lucide', 'chevrons-down');
-    buttonText.textContent = 'Expand all';
-  }
-  
-  // Refresh icon
-  if (lucideIcons) {
-    lucideIcons.createIcons({
-      elements: [buttonIcon]
-    });
-  } else if (window.lucide) {
-    window.lucide.createIcons({
-      elements: [buttonIcon]
-    });
+    elements.expandCollapseAll.textContent = 'Expand all';
   }
 }
 

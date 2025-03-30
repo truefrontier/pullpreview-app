@@ -442,9 +442,6 @@ input:checked + .toggle-slider::before {
 }
 
 .status-link {
-  display: flex;
-  align-items: center;
-  gap: 4px;
   text-decoration: none;
   color: #2196F3;
   transition: color 0.2s, opacity 0.2s;
@@ -454,11 +451,6 @@ input:checked + .toggle-slider::before {
 .status-link:hover {
   text-decoration: underline;
   opacity: 1;
-}
-
-.status-link i {
-  width: 12px;
-  height: 12px;
 }
 
 @media (prefers-color-scheme: dark) {
