@@ -175,9 +175,9 @@ function setupEventListeners() {
     }
   });
   
-  // Hide the expand/collapse all button since we no longer need it
+  // Enable the expand/collapse all button
   if (elements.expandCollapseAll) {
-    elements.expandCollapseAll.style.display = 'none';
+    elements.expandCollapseAll.addEventListener('click', toggleAllFiles);
   }
   
   // Sorting dropdown change event
@@ -496,10 +496,16 @@ function truncatePath(path) {
   return `${start}/.../${end}`;
 }
 
-// This function is no longer needed, but we'll keep an empty version
-// to avoid errors in case it's called from elsewhere in the code
-function updateExpandCollapseAllButton() {
-  // Function intentionally left empty as expand/collapse feature has been removed
+// Update the expand/collapse all button based on current file states
+function checkExpandedState() {
+  const fileElements = [...elements.diffContainer.children];
+  if (fileElements.length === 0) return;
+  
+  // Check if all files are expanded
+  const allExpanded = fileElements.every(el => el.dataset.expanded === 'true');
+  
+  // Update button text/icon accordingly
+  updateExpandCollapseAllButton(allExpanded);
 }
 
 // Flag to prevent dropdown updates after saved branch is loaded
@@ -664,6 +670,9 @@ function renderDiff(diffData) {
   
   // Update sort dropdown to match the current sort order
   elements.sortDropdown.value = appState.sortOrder;
+  
+  // Update expand/collapse all button after rendering files
+  checkExpandedState();
 }
 
 // Sort files based on the specified order
@@ -726,8 +735,9 @@ function createFileElement(file) {
   fileElement.className = 'diff-file';
   fileElement.dataset.filePath = file.path;
   
-  // All files are always expanded now
-  const isExpanded = true;
+  // Check if this file was previously expanded
+  const isExpanded = isFileExpanded(file.path);
+  fileElement.dataset.expanded = isExpanded;
   
   // Create file header
   const fileHeader = document.createElement('div');
@@ -751,26 +761,52 @@ function createFileElement(file) {
   openFileIcon.setAttribute('data-lucide', 'external-link');
   fileHeaderRight.appendChild(openFileIcon);
   
-  // No more expand/collapse functionality, so we'll just create an empty element
+  // Far right with expand/collapse icon
   const fileHeaderFarRight = document.createElement('div');
   fileHeaderFarRight.className = 'file-header-far-right';
+  
+  // Add expand/collapse icon
+  const expandCollapseIcon = document.createElement('i');
+  expandCollapseIcon.className = 'expand-collapse-icon';
+  expandCollapseIcon.setAttribute('data-lucide', isExpanded ? 'chevron-down' : 'chevron-right');
+  fileHeaderFarRight.appendChild(expandCollapseIcon);
   
   // Add all sections to header
   fileHeader.appendChild(fileHeaderLeft);
   fileHeader.appendChild(fileHeaderRight);
   fileHeader.appendChild(fileHeaderFarRight);
   
+  // Click handler for the entire header to toggle expand/collapse
+  fileHeader.addEventListener('click', (event) => {
+    // Only handle clicks directly on the header or the chevron icon
+    // This lets other click handlers work for other elements
+    if (event.target === fileHeader || 
+        event.target === fileHeaderFarRight || 
+        event.target === expandCollapseIcon ||
+        expandCollapseIcon.contains(event.target)) {
+      
+      const isCurrentlyExpanded = fileElement.dataset.expanded === 'true';
+      const newExpandedState = !isCurrentlyExpanded;
+      
+      // Toggle expanded state
+      toggleFileExpansion(fileElement, newExpandedState);
+      
+      // Save the expansion state
+      saveFileExpansionState(file.path, newExpandedState);
+      
+      event.stopPropagation();
+    }
+  });
+  
   // Add click handler to open file when clicking on left side (the filename area)
   fileHeaderLeft.addEventListener('click', async (event) => {
     try {
       await window.api.openFile(file.path);
+      event.stopPropagation();
     } catch (error) {
       showError(`Error opening file: ${error.message}`);
     }
   });
-  
-  // We no longer need a click handler for the far right section 
-  // since we've removed the expand/collapse functionality
   
   // Add click handler to open file when clicking on the external link icon
   openFileIcon.addEventListener('click', async (event) => {
@@ -838,11 +874,120 @@ function createFileElement(file) {
   return fileElement;
 }
 
-// This function is no longer needed, but we'll keep an empty version
-// to avoid errors in case it's called from elsewhere in the code
+// Check if a file is expanded based on saved state
 function isFileExpanded(filePath) {
-  // Always return true since we removed expand/collapse functionality
+  // Get current repository path
+  const repoPath = appState.repositoryPath;
+  
+  // Default to true (expanded) if no state is saved
+  if (!repoPath || !appState.settings || !appState.settings.expandedFiles) {
+    return true;
+  }
+  
+  // Get expanded file states for current repository
+  const repoExpandedFiles = appState.settings.expandedFiles[repoPath] || {};
+  
+  // If there's saved state for this file, use it
+  if (filePath in repoExpandedFiles) {
+    return repoExpandedFiles[filePath];
+  }
+  
+  // Default to expanded if nothing is saved
   return true;
+}
+
+// Save the expanded/collapsed state of a file
+function saveFileExpansionState(filePath, isExpanded) {
+  if (filePath) {
+    window.api.saveFileExpansionState({
+      filePath,
+      isExpanded
+    }).catch(error => {
+      console.error('Error saving file expansion state:', error);
+    });
+  }
+}
+
+// Toggle file expansion
+function toggleFileExpansion(fileElement, expand) {
+  // Update the data attribute
+  fileElement.dataset.expanded = expand;
+  
+  // Find the content containers (both binary and diff hunks)
+  const binaryContent = fileElement.querySelector('.binary-file-content');
+  const hunksContainer = fileElement.querySelector('.diff-hunks');
+  
+  // Update the expand/collapse icon
+  const expandCollapseIcon = fileElement.querySelector('.expand-collapse-icon');
+  if (expandCollapseIcon) {
+    expandCollapseIcon.setAttribute('data-lucide', expand ? 'chevron-down' : 'chevron-right');
+    
+    // Refresh the icon
+    if (lucideIcons) {
+      lucideIcons.createIcons({
+        elements: [expandCollapseIcon]
+      });
+    } else if (window.lucide) {
+      window.lucide.createIcons({
+        elements: [expandCollapseIcon]
+      });
+    }
+  }
+  
+  // Show/hide content based on expanded state
+  if (binaryContent) {
+    binaryContent.style.display = expand ? '' : 'none';
+  }
+  
+  if (hunksContainer) {
+    hunksContainer.style.display = expand ? '' : 'none';
+  }
+}
+
+// Toggle all files' expansion state
+function toggleAllFiles() {
+  const fileElements = [...elements.diffContainer.children];
+  if (fileElements.length === 0) return;
+  
+  // Check if all files are currently expanded
+  const allExpanded = fileElements.every(el => el.dataset.expanded === 'true');
+  
+  // Toggle all files to the opposite state
+  fileElements.forEach(fileElement => {
+    const filePath = fileElement.dataset.filePath;
+    const newState = !allExpanded;
+    
+    toggleFileExpansion(fileElement, newState);
+    saveFileExpansionState(filePath, newState);
+  });
+  
+  // Update the expand/collapse all button text and icon
+  updateExpandCollapseAllButton(!allExpanded);
+}
+
+// Update the expand/collapse all button text and icon
+function updateExpandCollapseAllButton(expanding) {
+  const buttonText = elements.expandCollapseAll.querySelector('span');
+  const buttonIcon = elements.expandCollapseAll.querySelector('i');
+  
+  if (expanding) {
+    buttonText.textContent = 'Collapse All';
+    buttonIcon.setAttribute('data-lucide', 'chevrons-up');
+  } else {
+    buttonText.textContent = 'Expand All';
+    buttonIcon.setAttribute('data-lucide', 'chevrons-down');
+  }
+  
+  // Refresh icon
+  if (lucideIcons) {
+    lucideIcons.createIcons({
+      elements: [buttonIcon]
+    });
+  } else if (window.lucide) {
+    window.lucide.createIcons({
+      elements: [buttonIcon]
+    });
+  }
 }
 
 // Create a hunk element for the diff
