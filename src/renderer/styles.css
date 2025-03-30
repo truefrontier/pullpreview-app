@@ -431,6 +431,40 @@ input:checked + .toggle-slider::before {
 
 .last-updated {
   opacity: 0.8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-separator {
+  margin: 0 2px;
+  opacity: 0.5;
+}
+
+.status-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+  color: #2196F3;
+  transition: color 0.2s, opacity 0.2s;
+  font-size: 11px;
+}
+
+.status-link:hover {
+  text-decoration: underline;
+  opacity: 1;
+}
+
+.status-link i {
+  width: 12px;
+  height: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .status-link {
+    color: #4dabf5;
+  }
 }
 
 button {

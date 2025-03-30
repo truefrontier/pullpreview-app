@@ -159,9 +159,12 @@ function setupEventListeners() {
     }
   });
   
-  // Enable the expand/collapse all button
+  // Enable the expand/collapse all link
   if (elements.expandCollapseAll) {
-    elements.expandCollapseAll.addEventListener('click', toggleAllFiles);
+    elements.expandCollapseAll.addEventListener('click', (event) => {
+      event.preventDefault(); // Prevent the default link behavior
+      toggleAllFiles();
+    });
   }
   
   // Sorting dropdown change event
@@ -963,16 +966,19 @@ function toggleAllFiles() {
   updateExpandCollapseAllButton(!allExpanded);
 }
 
-// Update the expand/collapse all button icon and tooltip
+// Update the expand/collapse all link text, icon and tooltip
 function updateExpandCollapseAllButton(expanding) {
   const buttonIcon = elements.expandCollapseAll.querySelector('i');
+  const buttonText = elements.expandCollapseAll.querySelector('span');
   
   if (expanding) {
     elements.expandCollapseAll.title = 'Collapse all files';
     buttonIcon.setAttribute('data-lucide', 'chevrons-up');
+    buttonText.textContent = 'Collapse all';
   } else {
     elements.expandCollapseAll.title = 'Expand all files';
     buttonIcon.setAttribute('data-lucide', 'chevrons-down');
+    buttonText.textContent = 'Expand all';
   }
   
   // Refresh icon
