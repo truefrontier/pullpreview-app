@@ -9,6 +9,7 @@ const elements = {
   emptyState: document.getElementById('empty-state'),
   selectBranch: document.getElementById('select-branch'),
   loading: document.getElementById('loading'),
+  loadingText: document.getElementById('loading-text'),
   noDifferences: document.getElementById('no-differences'),
   diffContainer: document.getElementById('diff-container'),
   errorToast: document.getElementById('error-toast'),
@@ -348,11 +349,16 @@ function setupIpcListeners() {
     
     // We no longer need to load expanded files state since we've removed the expand/collapse feature
     
-    // Hide loading state
-    elements.loading.classList.add('hidden');
+    // Only hide loading state if we're not restoring a saved target branch
+    if (!data.keepLoading) {
+      elements.loading.classList.add('hidden');
+    } else {
+      // Update loading message to be more specific about what's happening
+      updateStatus('Loading saved branch...', 'info');
+    }
     
     updateUI();
-    updateStatus('Repository loaded', 'success');
+    updateStatus(data.keepLoading ? 'Loading saved branch...' : 'Repository loaded', 'success');
   });
   
   // Repository load failed
@@ -381,7 +387,15 @@ function setupIpcListeners() {
     if (isLoading) {
       elements.noDifferences.classList.add('hidden');
       elements.diffContainer.classList.add('hidden');
-      updateStatus('Pulling changes...');
+      
+      // Check if we're loading a target branch from saved preferences
+      if (appState.repositoryLoaded && !appState.targetBranch) {
+        elements.loadingText.textContent = 'Loading saved branch...';
+        updateStatus('Loading saved branch...', 'info');
+      } else {
+        elements.loadingText.textContent = 'Pulling changes...';
+        updateStatus('Pulling changes...');
+      }
     }
   });
   

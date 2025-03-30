@@ -431,12 +431,28 @@ async function loadRepository(repoPath) {
     
     // Send repository information to renderer
     if (mainWindow) {
+      // Check if we have a saved target branch that we're going to restore
+      // If so, don't hide the loading state yet since we'll be loading that branch
+      const userDataPath = path.join(app.getPath('userData'), 'prefs.json');
+      let willLoadSavedBranch = false;
+      
+      if (fs.existsSync(userDataPath)) {
+        try {
+          const userData = JSON.parse(fs.readFileSync(userDataPath, 'utf8'));
+          // If we have a target branch we'll be loading soon, keep the loading state
+          willLoadSavedBranch = userData.lastTargetBranch && userData.lastTargetBranch.trim() !== '';
+        } catch (e) {
+          console.warn('Error reading prefs when checking for lastTargetBranch:', e);
+        }
+      }
+      
       mainWindow.webContents.send('repository-loaded', {
         path: repoPath,
         currentBranch,
         targetBranch, // Empty string, no branch selected by default
         branches,
-        expandedFiles: repoExpandedFiles
+        expandedFiles: repoExpandedFiles,
+        keepLoading: willLoadSavedBranch // Tell the UI to keep the loading state if we have a branch to restore
       });
     }
     
