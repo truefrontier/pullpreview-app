@@ -1,17 +1,17 @@
 # PR Preview Watcher Roadmap
 
 ## Current Development Priorities
-- [ ] Add sorting dropdown 
+- [x] Add sorting dropdown 
   - Default to file last modified
   - A-Z ↑ and ↓
-- [ ] Add expand/collapse for diff files
+- [x] Add expand/collapse for diff files
 
 
 ### Persistence Improvements
-- [ ] Add keyboard shortcuts
-  - Remove Settings button and show on `⌘.`
-- [ ] Add new window `⌘N`
-  - Remove Change Folder button
+- [x] Add keyboard shortcuts
+  - Settings available on `⌘,`
+- [x] Add new window `⌘N`
+  - Removed Change Folder button
 - [ ] Add new tab `⌘T`
 
 ### Feature Additions
