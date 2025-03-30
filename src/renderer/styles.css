@@ -563,6 +563,7 @@ main {
   cursor: pointer;
   font-family: 'Hack', monospace;
   font-size: 13px;
+  transition: background-color 0.2s;
 }
 
 .file-header:hover {
@@ -604,24 +605,12 @@ main {
 
 .file-header-far-right {
   margin-left: auto;
-  cursor: pointer;
   min-width: 30px;
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 0 10px;
-  transition: background-color 0.2s;
   border-radius: 0 4px 4px 0;
-}
-
-.file-header-far-right:hover {
-  background-color: rgba(0, 0, 0, 0.1);
-}
-
-@media (prefers-color-scheme: dark) {
-  .file-header-far-right:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-  }
 }
 
 .expand-collapse-icon {

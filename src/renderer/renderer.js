@@ -784,18 +784,19 @@ function createFileElement(file) {
   fileHeader.appendChild(fileHeaderLeft);
   fileHeader.appendChild(fileHeaderFarRight);
   
-  // Click handler ONLY for the far right section (with chevron) to toggle expand/collapse
-  fileHeaderFarRight.addEventListener('click', (event) => {
-    const isCurrentlyExpanded = fileElement.dataset.expanded === 'true';
-    const newExpandedState = !isCurrentlyExpanded;
-    
-    // Toggle expanded state
-    toggleFileExpansion(fileElement, newExpandedState);
-    
-    // Save the expansion state
-    saveFileExpansionState(file.path, newExpandedState);
-    
-    event.stopPropagation();
+  // Click handler for the file header to toggle expand/collapse
+  fileHeader.addEventListener('click', (event) => {
+    // Only toggle if we're not clicking directly on the filename
+    if (event.target !== fileNameSpan) {
+      const isCurrentlyExpanded = fileElement.dataset.expanded === 'true';
+      const newExpandedState = !isCurrentlyExpanded;
+      
+      // Toggle expanded state
+      toggleFileExpansion(fileElement, newExpandedState);
+      
+      // Save the expansion state
+      saveFileExpansionState(file.path, newExpandedState);
+    }
   });
   
   // Add click handler to open file when clicking on the filename
