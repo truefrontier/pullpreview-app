@@ -176,15 +176,8 @@ function setupEventListeners() {
     
     // Apply sorting to the current diff
     if (elements.diffContainer.children.length > 0) {
-      if (selectedSortOrder === 'modified' && appState.targetBranch) {
-        // For modified sorting, refresh the diff to get the original order from the server
-        window.api.refreshDiff(appState.targetBranch).catch(error => {
-          showError(`Error refreshing diff: ${error.message}`);
-        });
-      } else {
-        // Apply client-side sorting for alphabetical orders
-        sortFileElements(selectedSortOrder);
-      }
+      // Now we can sort all ways locally using sortFileElements
+      sortFileElements(selectedSortOrder);
       updateStatus(`Sorted files by ${getSortOrderLabel(selectedSortOrder)}`, 'info');
     }
   });
@@ -646,6 +639,9 @@ function updateBranchesDropdown() {
   }
 }
 
+// Store the original order of files
+let originalFileOrder = [];
+
 // Render diff data
 function renderDiff(diffData) {
   // Clear current diff container content
@@ -664,6 +660,9 @@ function renderDiff(diffData) {
   // We have differences to show
   elements.noDifferences.classList.add('hidden');
   elements.diffContainer.classList.remove('hidden');
+  
+  // Store original order (files come sorted by modification time from server)
+  originalFileOrder = diffData.map(file => file.path);
   
   // Sort the files according to current sort order
   const sortedFiles = sortFiles([...diffData], appState.sortOrder);
@@ -695,12 +694,10 @@ function sortFiles(files, sortOrder) {
   }
 }
 
-// Sort existing file elements in the DOM alphabetically
+// Sort existing file elements in the DOM
 function sortFileElements(sortOrder) {
   const fileElements = [...elements.diffContainer.children];
   
-  // This function only handles alphabetical sorting (AZ or ZA)
-  // For modified time sorting, we refresh from the server
   switch (sortOrder) {
     case 'az':
       fileElements.sort((a, b) => {
@@ -712,8 +709,15 @@ function sortFileElements(sortOrder) {
         return b.dataset.filePath.localeCompare(a.dataset.filePath);
       });
       break;
+    case 'modified':
+      // Sort according to the original order (modification time) we saved
+      fileElements.sort((a, b) => {
+        const indexA = originalFileOrder.indexOf(a.dataset.filePath);
+        const indexB = originalFileOrder.indexOf(b.dataset.filePath);
+        return indexA - indexB;
+      });
+      break;
     default:
-      // Should not happen since we handle modified sorting separately
       console.warn(`Unexpected sort order in sortFileElements: ${sortOrder}`);
       return;
   }
