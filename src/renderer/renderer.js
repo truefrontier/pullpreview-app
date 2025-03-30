@@ -1,7 +1,6 @@
 // DOM Elements
 const elements = {
   header: document.getElementById('header'),
-  repoPath: document.getElementById('repo-path'),
   currentBranch: document.getElementById('current-branch'),
   targetBranchSelect: document.getElementById('target-branch-select'),
   autoRefreshToggle: document.getElementById('auto-refresh'),
@@ -335,7 +334,7 @@ function setupIpcListeners() {
     elements.diffContainer.classList.add('hidden');
     
     // Update status with loading message
-    updateStatus(`Loading repository: ${truncatePath(data.path)}...`, 'info');
+    updateStatus('Loading repository...', 'info');
   });
   
   // Repository loaded
@@ -352,7 +351,7 @@ function setupIpcListeners() {
     elements.loading.classList.add('hidden');
     
     updateUI();
-    updateStatus(`Repository loaded: ${truncatePath(data.path)}`, 'success');
+    updateStatus('Repository loaded', 'success');
   });
   
   // Repository load failed
@@ -495,22 +494,6 @@ function updateTargetBranchSelect() {
   }
 }
 
-// Helper function to truncate repository path for display
-function truncatePath(path) {
-  if (!path) return '';
-  
-  // If path is short enough, return it as is
-  if (path.length <= 40) return path;
-  
-  // Otherwise truncate the middle
-  const parts = path.split('/');
-  if (parts.length <= 2) return path;
-  
-  const start = parts.slice(0, 2).join('/');
-  const end = parts.slice(-2).join('/');
-  
-  return `${start}/.../${end}`;
-}
 
 // Update the expand/collapse link based on current file states
 function updateCollapseExpandLink() {
@@ -534,7 +517,6 @@ function updateUI() {
   
   // Update header content
   if (appState.repositoryLoaded) {
-    elements.repoPath.textContent = appState.repositoryPath;
     elements.currentBranch.textContent = appState.currentBranch;
   }
   
