@@ -5,7 +5,7 @@
   - Default to file last modified
   - A-Z ↑ and ↓
 - [x] Add expand/collapse for diff files
-
+- [ ] Move toggle refresh to settings modal
 
 ### Persistence Improvements
 - [x] Add keyboard shortcuts
@@ -15,9 +15,8 @@
 - [ ] Add new tab `⌘T`
 
 ### Feature Additions
-- [ ] Stage/unstage changes directly in the app
-	- use a checkbox on the left side of the filename bar to handle the staged state of a the entire file
-- [ ] Enable window tabs to open multiple repositories
+- [x] Stage/unstage changes directly in the app
+	- Added checkbox on the left side of each file to handle staged state
 
 ## Future Enhancements
 
@@ -31,6 +30,11 @@ These items are planned for future releases based on the project specification:
 # Changelog
 
 ## [Unreleased]
+- Added sorting dropdown with options for Last Modified, A-Z, and Z-A
+- Re-enabled expand/collapse functionality for diff files
+- Added keyboard shortcuts for application menu, new window, and settings
+- Removed Change Folder button, added File menu with Open Repository option
+- Added stage/unstage functionality with checkboxes for files
 - Added persistence for repository path and target branch between sessions
 - Added settings modal with option to select preferred code editor
 - Fixed repository loading UX to show proper loading state
