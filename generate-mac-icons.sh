@@ -11,6 +11,7 @@ fi
 
 # Source image
 SOURCE_IMAGE="PullPreviewLogo.png"
+MASK_IMAGE="example-icon.png"
 
 # Destination directory
 ICON_DIR="src/icons/mac"
@@ -18,6 +19,10 @@ mkdir -p "$ICON_DIR"
 
 # Create icons directory if it doesn't exist
 mkdir -p "$ICON_DIR/icons.iconset"
+
+# Create a temporary directory for processing
+TMP_DIR=$(mktemp -d)
+trap 'rm -rf "$TMP_DIR"' EXIT
 
 # Generate icon sizes for macOS
 # Format: name, size
@@ -36,11 +41,22 @@ ICON_SIZES=(
 
 echo "Generating macOS icons..."
 
-# Generate all icon sizes
+# Extract the alpha channel from the example icon to use as a mask
+magick "$MASK_IMAGE" -alpha extract "$TMP_DIR/alpha_mask.png"
+
+# Generate macOS icons for each size
 for ICON_DEF in "${ICON_SIZES[@]}"; do
     IFS=',' read -r ICON_NAME ICON_SIZE <<< "$ICON_DEF"
     echo "Creating $ICON_NAME ($ICON_SIZE x $ICON_SIZE)"
-    magick "$SOURCE_IMAGE" -resize "${ICON_SIZE}x${ICON_SIZE}" "$ICON_DIR/icons.iconset/$ICON_NAME"
+    
+    # Resize the mask to the target size
+    magick "$TMP_DIR/alpha_mask.png" -resize "${ICON_SIZE}x${ICON_SIZE}" "$TMP_DIR/mask_${ICON_SIZE}.png"
+    
+    # Resize the source image to fill the entire icon space
+    magick "$SOURCE_IMAGE" -resize "${ICON_SIZE}x${ICON_SIZE}^" -gravity center -extent "${ICON_SIZE}x${ICON_SIZE}" "$TMP_DIR/resized_${ICON_SIZE}.png"
+    
+    # Apply the mask to the source image to get the final icon
+    magick "$TMP_DIR/resized_${ICON_SIZE}.png" "$TMP_DIR/mask_${ICON_SIZE}.png" -alpha Off -compose CopyOpacity -composite "$ICON_DIR/icons.iconset/$ICON_NAME"
 done
 
 # Generate icns file from iconset
@@ -59,5 +75,7 @@ fi
 echo "Copying main icons for electron-builder..."
 cp "$ICON_DIR/icons.iconset/icon_512x512.png" "$ICON_DIR/icon.png"
 cp "$ICON_DIR/icons.iconset/icon_256x256.png" "$ICON_DIR/icon@2x.png"
+
+# Clean up temp files (this will be handled by the trap command)
 
 echo "Icon generation complete!"
