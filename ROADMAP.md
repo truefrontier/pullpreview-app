@@ -5,7 +5,7 @@
   - Default to file last modified
   - A-Z ↑ and ↓
 - [x] Add expand/collapse for diff files
-- [ ] Move toggle refresh to settings modal
+- [x] Move toggle refresh to settings modal
 
 ### Persistence Improvements
 - [x] Add keyboard shortcuts
@@ -35,6 +35,7 @@ These items are planned for future releases based on the project specification:
 - Added keyboard shortcuts for application menu, new window, and settings
 - Removed Change Folder button, added File menu with Open Repository option
 - Added stage/unstage functionality with checkboxes for files
+- Moved auto-refresh toggle from toolbar to settings modal
 - Added persistence for repository path and target branch between sessions
 - Added settings modal with option to select preferred code editor
 - Fixed repository loading UX to show proper loading state
