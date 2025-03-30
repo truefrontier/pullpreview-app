@@ -110,7 +110,6 @@ html, body {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding-top: 28px; /* Account for macOS traffic lights */
 }
 
 /* Header styles */
@@ -121,6 +120,19 @@ header {
   user-select: none;
   display: flex;
   flex-direction: column;
+  padding-top: 28px; /* Add space for macOS traffic lights */
+}
+
+/* Create a draggable area at the top */
+header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 28px; /* macOS traffic lights height */
+  -webkit-app-region: drag;
+  z-index: 9999;
 }
 
 /* Toolbar section */
@@ -249,24 +261,70 @@ header {
   }
 }
 
-/* Sort dropdown */
-.sort-dropdown-container {
+/* Branch container */
+.branch-container {
   display: flex;
   align-items: center;
-  gap: 6px;
-  background-color: var(--button-background);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  padding: 4px 8px;
+  gap: 8px;
 }
 
-.sort-icon {
+.branch-icon {
   opacity: 0.7;
   width: 16px;
   height: 16px;
 }
 
-.sort-dropdown {
+.current-branch {
+  font-weight: 500;
+  color: #2196F3;
+  padding: 0 4px;
+  white-space: nowrap;
+}
+
+.branch-arrow {
+  opacity: 0.5;
+  width: 15px;
+  height: 15px;
+  margin: 0 4px;
+}
+
+/* Dropdown group with icon outside */
+.dropdown-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Sort and branch dropdowns */
+.sort-dropdown-container,
+.branch-dropdown-container {
+  display: flex;
+  align-items: center;
+  background-color: var(--button-background);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 4px 8px;
+  position: relative;
+}
+
+.dropdown-caret {
+  opacity: 0.5;
+  width: 14px;
+  height: 14px;
+  position: absolute;
+  right: 6px;
+  pointer-events: none;
+}
+
+.sort-icon,
+.branch-icon {
+  opacity: 0.7;
+  width: 16px;
+  height: 16px;
+}
+
+.sort-dropdown,
+.branch-dropdown {
   border: none;
   background-color: transparent;
   color: var(--text-color);
@@ -274,22 +332,28 @@ header {
   cursor: pointer;
   outline: none;
   appearance: none;
-  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23666%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
-  background-repeat: no-repeat;
-  background-position: right 0px center;
-  background-size: 8px;
-  padding-right: 12px;
+  padding-right: 20px; /* Make room for the caret icon */
+  background-image: none;
 }
 
 @media (prefers-color-scheme: dark) {
-  .sort-dropdown-container {
+  .sort-dropdown-container,
+  .branch-dropdown-container {
     background-color: #3a3a3a;
     border-color: #555;
   }
   
-  .sort-dropdown {
-    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23aaa%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  .sort-dropdown,
+  .branch-dropdown {
     color: #e0e0e0;
+  }
+  
+  .dropdown-caret {
+    opacity: 0.6;
+  }
+  
+  .current-branch {
+    color: #4dabf5;
   }
 }
 
@@ -371,6 +435,11 @@ input:checked + .toggle-slider::before {
   color: var(--secondary-text-color);
   height: 28px;
   border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Make status bar links clickable */
+.status-message, .last-updated, .status-link {
+  -webkit-app-region: no-drag;
 }
 
 .status-message {

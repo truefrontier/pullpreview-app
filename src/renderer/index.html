@@ -14,22 +14,29 @@
       <!-- Top toolbar with app controls -->
       <div class="toolbar">
         <div class="toolbar-left">
-          <div class="branch-display">
+          <div class="branch-container">
+            <i data-lucide="git-branch" class="branch-icon"></i>
             <span id="current-branch" class="current-branch"></span>
-            <i data-lucide="arrow-right" class="arrow-icon"></i>
-            <select id="target-branch-select" class="target-branch-select"></select>
+            <i data-lucide="arrow-right-left" class="branch-arrow"></i>
+            <div class="branch-dropdown-container">
+              <select id="target-branch-select" class="branch-dropdown"></select>
+              <i data-lucide="chevron-down" class="dropdown-caret"></i>
+            </div>
           </div>
         </div>
         
         <div class="toolbar-right">
           <div class="button-group">
-            <div class="sort-dropdown-container">
-              <i data-lucide="filter" class="sort-icon"></i>
-              <select id="sort-dropdown" class="sort-dropdown">
-                <option value="modified">Last Modified</option>
-                <option value="az">A-Z</option>
-                <option value="za">Z-A</option>
-              </select>
+            <div class="dropdown-group">
+              <i data-lucide="arrow-down-a-z" class="sort-icon"></i>
+              <div class="sort-dropdown-container">
+                <select id="sort-dropdown" class="sort-dropdown">
+                  <option value="modified">Last Modified</option>
+                  <option value="az">A-Z</option>
+                  <option value="za">Z-A</option>
+                </select>
+                <i data-lucide="chevron-down" class="dropdown-caret"></i>
+              </div>
             </div>
             
             <button id="refresh-button" class="toolbar-button hidden">
@@ -130,7 +137,7 @@
                   <span class="toggle-slider"></span>
                   <span class="toggle-label">Auto-Refresh</span>
                 </label>
-                <p class="setting-description">Automatically refresh the diff view when changes are detected in the repository</p>
+                <p class="setting-description">Automatically refresh the diff view when changes are detected in the repository. You can also manually refresh at any time with ⌘+R.</p>
               </div>
             </div>
           </div>

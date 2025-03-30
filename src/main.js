@@ -185,7 +185,7 @@ function createApplicationMenu() {
         { type: 'separator' },
         {
           label: 'Preferences',
-          accelerator: 'CmdOrCtrl+.',
+          accelerator: 'CmdOrCtrl+,',
           click: () => {
             // Send message to renderer to open settings
             if (mainWindow) {
