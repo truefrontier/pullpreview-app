@@ -29,6 +29,15 @@
         
         <div class="toolbar-right">
           <div class="button-group">
+            <div class="sort-dropdown-container">
+              <i data-lucide="filter" class="sort-icon"></i>
+              <select id="sort-dropdown" class="sort-dropdown">
+                <option value="modified">Last Modified</option>
+                <option value="az">A-Z</option>
+                <option value="za">Z-A</option>
+              </select>
+            </div>
+            
             <button id="expand-collapse-all" class="toolbar-button">
               <i data-lucide="chevrons-up" class="expand-collapse-all-icon"></i>
               <span>Collapse All</span>

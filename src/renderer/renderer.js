@@ -19,6 +19,7 @@ const elements = {
   statusText: document.getElementById('status-text'),
   lastUpdatedTime: document.getElementById('last-updated-time'),
   expandCollapseAll: document.getElementById('expand-collapse-all'),
+  sortDropdown: document.getElementById('sort-dropdown'),
   
   // Settings
   settingsButton: document.getElementById('settings-button'),
@@ -41,11 +42,13 @@ let appState = {
   branches: [],
   isLoading: false,
   autoRefreshEnabled: true,
+  sortOrder: 'modified', // Default to last modified
   
   // Settings
   settings: {
     editorType: 'system', // Default to system editor
-    customEditorPath: ''  // Only used if editorType is 'custom'
+    customEditorPath: '',  // Only used if editorType is 'custom'
+    sortOrder: 'modified'  // Default sort order, saved in settings
   }
 };
 
@@ -177,6 +180,21 @@ function setupEventListeners() {
     elements.expandCollapseAll.style.display = 'none';
   }
   
+  // Sorting dropdown change event
+  elements.sortDropdown.addEventListener('change', () => {
+    const selectedSortOrder = elements.sortDropdown.value;
+    appState.sortOrder = selectedSortOrder;
+    
+    // Store in settings for persistence
+    appState.settings.sortOrder = selectedSortOrder;
+    
+    // Apply sorting to the current diff
+    if (elements.diffContainer.children.length > 0) {
+      sortFileElements(selectedSortOrder);
+      updateStatus(`Sorted files by ${getSortOrderLabel(selectedSortOrder)}`, 'info');
+    }
+  });
+  
   // Settings button - open settings modal
   elements.settingsButton.addEventListener('click', () => {
     // Load current settings into the form
@@ -234,6 +252,9 @@ function setupEventListeners() {
         }
       }
       
+      // Include current sort order preference in settings
+      appState.settings.sortOrder = appState.sortOrder;
+      
       // Save settings to main process
       const result = await window.api.saveSettings(appState.settings);
       
@@ -276,6 +297,12 @@ function setupIpcListeners() {
       
       // Update app state
       appState.settings = data.settings;
+      
+      // Apply sortOrder from settings if it exists
+      if (data.settings.sortOrder) {
+        appState.sortOrder = data.settings.sortOrder;
+        elements.sortDropdown.value = data.settings.sortOrder;
+      }
       
       // Log the current application settings
       console.log('Current app settings after update:', appState.settings);
@@ -626,11 +653,71 @@ function renderDiff(diffData) {
   elements.noDifferences.classList.add('hidden');
   elements.diffContainer.classList.remove('hidden');
   
+  // Sort the files according to current sort order
+  const sortedFiles = sortFiles([...diffData], appState.sortOrder);
+  
   // Create and append file elements
-  diffData.forEach(file => {
+  sortedFiles.forEach(file => {
     const fileElement = createFileElement(file);
     elements.diffContainer.appendChild(fileElement);
   });
+  
+  // Update sort dropdown to match the current sort order
+  elements.sortDropdown.value = appState.sortOrder;
+}
+
+// Sort files based on the specified order
+function sortFiles(files, sortOrder) {
+  switch (sortOrder) {
+    case 'az':
+      return files.sort((a, b) => a.path.localeCompare(b.path));
+    case 'za':
+      return files.sort((a, b) => b.path.localeCompare(a.path));
+    case 'modified':
+    default:
+      // Files are already sorted by modification time by the server
+      return files;
+  }
+}
+
+// Sort existing file elements in the DOM
+function sortFileElements(sortOrder) {
+  const fileElements = [...elements.diffContainer.children];
+  
+  switch (sortOrder) {
+    case 'az':
+      fileElements.sort((a, b) => {
+        return a.dataset.filePath.localeCompare(b.dataset.filePath);
+      });
+      break;
+    case 'za':
+      fileElements.sort((a, b) => {
+        return b.dataset.filePath.localeCompare(a.dataset.filePath);
+      });
+      break;
+    case 'modified':
+    default:
+      // Do nothing, as elements are already in modification time order
+      return;
+  }
+  
+  // Reappend elements in the new order
+  fileElements.forEach(element => {
+    elements.diffContainer.appendChild(element);
+  });
+}
+
+// Get a user-friendly label for the sort order
+function getSortOrderLabel(sortOrder) {
+  switch (sortOrder) {
+    case 'az':
+      return 'name (A-Z)';
+    case 'za':
+      return 'name (Z-A)';
+    case 'modified':
+    default:
+      return 'last modified';
+  }
 }
 
 // Create a file element for the diff
