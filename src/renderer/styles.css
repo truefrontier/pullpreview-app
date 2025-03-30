@@ -338,9 +338,8 @@ header {
 }
 
 /* Toggle switch */
-.toggle-container {
-  margin-left: 4px; /* Reduced from 8px since we already have gap in button-group */
-  padding-left: 4px; /* Add some padding */
+.toggle-setting {
+  margin-top: 10px;
 }
 
 .toggle-switch {
@@ -395,6 +394,14 @@ input:checked + .toggle-slider::before {
 .toggle-label {
   font-size: 12px;
   white-space: nowrap;
+}
+
+.setting-description {
+  margin-top: 4px;
+  margin-left: 44px;
+  font-size: 12px;
+  color: var(--secondary-text-color);
+  line-height: 1.4;
 }
 
 /* Status bar */

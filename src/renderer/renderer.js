@@ -47,7 +47,8 @@ let appState = {
   settings: {
     editorType: 'system', // Default to system editor
     customEditorPath: '',  // Only used if editorType is 'custom'
-    sortOrder: 'modified'  // Default sort order, saved in settings
+    sortOrder: 'modified',  // Default sort order, saved in settings
+    autoRefresh: true  // Default auto-refresh setting
   }
 };
 
@@ -145,19 +146,7 @@ function setupEventListeners() {
     }
   });
   
-  // Auto-refresh toggle
-  elements.autoRefreshToggle.addEventListener('change', async () => {
-    try {
-      const isEnabled = elements.autoRefreshToggle.checked;
-      appState.autoRefreshEnabled = isEnabled;
-      
-      elements.refreshButton.classList.toggle('hidden', isEnabled);
-      
-      await window.api.toggleAutoRefresh(isEnabled);
-    } catch (error) {
-      showError(`Error toggling auto-refresh: ${error.message}`);
-    }
-  });
+  // We'll handle auto-refresh toggle from the settings modal now
   
   // Manual refresh
   elements.refreshButton.addEventListener('click', async () => {
@@ -251,12 +240,23 @@ function setupEventListeners() {
       // Include current sort order preference in settings
       appState.settings.sortOrder = appState.sortOrder;
       
+      // Include current auto-refresh setting
+      appState.settings.autoRefresh = elements.autoRefreshToggle.checked;
+      appState.autoRefreshEnabled = elements.autoRefreshToggle.checked;
+      
       // Save settings to main process
       const result = await window.api.saveSettings(appState.settings);
       
       if (result.success) {
         // Close modal
         elements.settingsModal.classList.add('hidden');
+        
+        // Apply auto-refresh setting immediately
+        elements.refreshButton.classList.toggle('hidden', appState.autoRefreshEnabled);
+        
+        // Update the auto-refresh in the main process
+        await window.api.toggleAutoRefresh(appState.autoRefreshEnabled);
+        
         updateStatus('Settings saved successfully', 'success');
       } else if (result.error) {
         showError(result.error);
@@ -298,6 +298,12 @@ function setupIpcListeners() {
       if (data.settings.sortOrder) {
         appState.sortOrder = data.settings.sortOrder;
         elements.sortDropdown.value = data.settings.sortOrder;
+      }
+      
+      // Apply auto-refresh setting if it exists
+      if (data.settings.autoRefresh !== undefined) {
+        appState.autoRefreshEnabled = data.settings.autoRefresh;
+        elements.autoRefreshToggle.checked = data.settings.autoRefresh;
       }
       
       // Log the current application settings

@@ -52,14 +52,6 @@
               <i data-lucide="settings"></i>
               <span>Settings (⌘,)</span>
             </button>
-            
-            <div class="toggle-container">
-              <label class="toggle-switch" title="Auto-refresh when files change">
-                <input type="checkbox" id="auto-refresh" checked>
-                <span class="toggle-slider"></span>
-                <span class="toggle-label">Auto-Refresh</span>
-              </label>
-            </div>
           </div>
         </div>
       </div>
@@ -136,6 +128,21 @@
               <div class="input-with-button">
                 <input type="text" id="custom-editor-path" placeholder="/path/to/editor">
                 <button id="browse-editor-path">Browse...</button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="settings-group">
+            <h3>Repository</h3>
+            <p>Configure repository monitoring options.</p>
+            <div class="settings-control">
+              <div class="toggle-setting">
+                <label class="toggle-switch" title="Auto-refresh when files change">
+                  <input type="checkbox" id="auto-refresh" checked>
+                  <span class="toggle-slider"></span>
+                  <span class="toggle-label">Auto-Refresh</span>
+                </label>
+                <p class="setting-description">Automatically refresh the diff view when changes are detected in the repository</p>
               </div>
             </div>
           </div>
