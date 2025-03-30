@@ -1004,13 +1004,7 @@ function createHunkElement(hunk) {
   const hunkElement = document.createElement('div');
   hunkElement.className = 'diff-hunk';
   
-  // Create hunk header
-  const hunkHeader = document.createElement('div');
-  hunkHeader.className = 'hunk-header';
-  hunkHeader.textContent = `@@ -${hunk.oldStart},${hunk.oldCount} +${hunk.newStart},${hunk.newCount} @@`;
-  hunkElement.appendChild(hunkHeader);
-  
-  // Create hunk lines
+  // Create hunk lines (skip the hunk header)
   hunk.lines.forEach(line => {
     const lineElement = createLineElement(line);
     hunkElement.appendChild(lineElement);
@@ -1033,9 +1027,9 @@ function createLineElement(line) {
   const lineContent = document.createElement('div');
   lineContent.className = 'diff-line-content';
   
-  // Add line type symbol
+  // Add line type symbol with a tab character between symbol and content
   const symbol = line.type === 'addition' ? '+' : line.type === 'deletion' ? '-' : ' ';
-  lineContent.textContent = `${symbol}${line.content}`;
+  lineContent.textContent = `${symbol}\t${line.content}`;
   
   lineElement.appendChild(lineNumber);
   lineElement.appendChild(lineContent);

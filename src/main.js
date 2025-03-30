@@ -1067,6 +1067,20 @@ async function parseDiffOutput(diffOutput) {
         });
       }
       currentFile = null;
+    } else if (
+      line.startsWith('---') || 
+      line.startsWith('+++') || 
+      line.startsWith('index ') || 
+      line.startsWith('new file mode ') || 
+      line.startsWith('deleted file mode ') || 
+      line.startsWith('old mode ') || 
+      line.startsWith('new mode ') ||
+      line.startsWith('rename from ') ||
+      line.startsWith('rename to ') ||
+      line.startsWith('similarity index ')
+    ) {
+      // Skip all Git diff metadata lines
+      continue;
     } else if (line.match(/^@@ -\d+,?\d* \+\d+,?\d* @@/)) {
       // New hunk
       if (currentLines.length > 0) {

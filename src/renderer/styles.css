@@ -683,18 +683,20 @@ main {
   border: 1px solid var(--border-color);
   border-top: none;
   font-family: 'Hack', monospace;
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.5;
   white-space: pre;
   overflow-x: auto;
 }
 
+/* Hunk header is no longer displayed
 .hunk-header {
   padding: 2px 8px;
   background-color: var(--header-background);
   color: var(--secondary-text-color);
   font-size: 12px;
 }
+*/
 
 .diff-line {
   display: flex;
