@@ -185,7 +185,7 @@ function createApplicationMenu() {
         { type: 'separator' },
         {
           label: 'Preferences',
-          accelerator: 'CmdOrCtrl+,',
+          accelerator: 'CmdOrCtrl+.',
           click: () => {
             // Send message to renderer to open settings
             if (mainWindow) {
@@ -254,35 +254,6 @@ function createApplicationMenu() {
       ]
     },
     
-    // Edit menu
-    {
-      label: 'Edit',
-      submenu: [
-        { role: 'undo' },
-        { role: 'redo' },
-        { type: 'separator' },
-        { role: 'cut' },
-        { role: 'copy' },
-        { role: 'paste' },
-        ...(isMac ? [
-          { role: 'pasteAndMatchStyle' },
-          { role: 'delete' },
-          { role: 'selectAll' },
-          { type: 'separator' },
-          {
-            label: 'Speech',
-            submenu: [
-              { role: 'startSpeaking' },
-              { role: 'stopSpeaking' }
-            ]
-          }
-        ] : [
-          { role: 'delete' },
-          { type: 'separator' },
-          { role: 'selectAll' }
-        ])
-      ]
-    },
     
     // View menu
     {

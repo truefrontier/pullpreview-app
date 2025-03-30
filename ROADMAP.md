@@ -9,7 +9,7 @@
 
 ### Persistence Improvements
 - [x] Add keyboard shortcuts
-  - Settings available on `⌘,`
+  - Settings available on `⌘.`
 - [x] Add new window `⌘N`
   - Removed Change Folder button
 - [ ] Add new tab `⌘T`

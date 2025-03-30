@@ -21,7 +21,6 @@ const elements = {
   sortDropdown: document.getElementById('sort-dropdown'),
   
   // Settings
-  settingsButton: document.getElementById('settings-button'),
   settingsModal: document.getElementById('settings-modal'),
   closeSettings: document.getElementById('close-settings'),
   editorSelect: document.getElementById('editor-select'),
@@ -180,18 +179,7 @@ function setupEventListeners() {
     }
   });
   
-  // Settings button - open settings modal
-  elements.settingsButton.addEventListener('click', () => {
-    // Load current settings into the form
-    elements.editorSelect.value = appState.settings.editorType;
-    elements.customEditorPath.value = appState.settings.customEditorPath;
-    
-    // Show/hide custom editor path input based on selection
-    elements.customEditorPathContainer.classList.toggle('hidden', elements.editorSelect.value !== 'custom');
-    
-    // Show the modal
-    elements.settingsModal.classList.remove('hidden');
-  });
+  // Settings are now opened via keyboard shortcut through the menu
   
   // Close settings modal
   elements.closeSettings.addEventListener('click', () => {
@@ -313,6 +301,13 @@ function setupIpcListeners() {
   
   // Listen for keyboard shortcut events
   window.api.onOpenSettings(() => {
+    // Load current settings into the form
+    elements.editorSelect.value = appState.settings.editorType;
+    elements.customEditorPath.value = appState.settings.customEditorPath;
+    
+    // Show/hide custom editor path input based on selection
+    elements.customEditorPathContainer.classList.toggle('hidden', elements.editorSelect.value !== 'custom');
+    
     // Show settings modal
     elements.settingsModal.classList.remove('hidden');
   });
