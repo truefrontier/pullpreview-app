@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, Menu, globalShortcut } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { simpleGit } = require('simple-git');
@@ -172,12 +172,172 @@ async function loadSavedRepository() {
   }
 }
 
+// Create application menu with keyboard shortcuts
+function createApplicationMenu() {
+  const isMac = process.platform === 'darwin';
+  
+  const template = [
+    // App menu (macOS only)
+    ...(isMac ? [{
+      label: app.name,
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        {
+          label: 'Preferences',
+          accelerator: 'CmdOrCtrl+,',
+          click: () => {
+            // Send message to renderer to open settings
+            if (mainWindow) {
+              mainWindow.webContents.send('open-settings');
+            }
+          }
+        },
+        { type: 'separator' },
+        { role: 'services' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' }
+      ]
+    }] : []),
+    
+    // File menu
+    {
+      label: 'File',
+      submenu: [
+        {
+          label: 'New Window',
+          accelerator: 'CmdOrCtrl+N',
+          click: async () => {
+            createWindow();
+          }
+        },
+        {
+          label: 'Open Repository...',
+          accelerator: 'CmdOrCtrl+O',
+          click: async () => {
+            if (mainWindow) {
+              try {
+                const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+                  properties: ['openDirectory'],
+                  title: 'Select Git Repository',
+                  message: 'Select a Git repository to view differences',
+                });
+                
+                if (!canceled && filePaths.length > 0) {
+                  const repoPath = filePaths[0];
+                  const isValid = await validateRepository(repoPath);
+                  
+                  if (isValid) {
+                    await loadRepository(repoPath);
+                  } else {
+                    mainWindow.webContents.send('error', {
+                      message: 'The selected directory is not a valid Git repository.'
+                    });
+                  }
+                }
+              } catch (error) {
+                console.error('Error selecting repository:', error);
+                if (mainWindow) {
+                  mainWindow.webContents.send('error', {
+                    message: `Error selecting repository: ${error.message}`
+                  });
+                }
+              }
+            }
+          }
+        },
+        isMac ? { role: 'close' } : { role: 'quit' }
+      ]
+    },
+    
+    // Edit menu
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        ...(isMac ? [
+          { role: 'pasteAndMatchStyle' },
+          { role: 'delete' },
+          { role: 'selectAll' },
+          { type: 'separator' },
+          {
+            label: 'Speech',
+            submenu: [
+              { role: 'startSpeaking' },
+              { role: 'stopSpeaking' }
+            ]
+          }
+        ] : [
+          { role: 'delete' },
+          { type: 'separator' },
+          { role: 'selectAll' }
+        ])
+      ]
+    },
+    
+    // View menu
+    {
+      label: 'View',
+      submenu: [
+        {
+          label: 'Refresh',
+          accelerator: 'CmdOrCtrl+R',
+          click: () => {
+            if (mainWindow && currentRepo) {
+              // Get the current target branch from the renderer
+              mainWindow.webContents.send('refresh-requested');
+            }
+          }
+        },
+        { type: 'separator' },
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' }
+      ]
+    },
+    
+    // Window menu
+    {
+      label: 'Window',
+      submenu: [
+        { role: 'minimize' },
+        { role: 'zoom' },
+        ...(isMac ? [
+          { type: 'separator' },
+          { role: 'front' },
+          { type: 'separator' },
+          { role: 'window' }
+        ] : [
+          { role: 'close' }
+        ])
+      ]
+    },
+  ];
+  
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
+}
+
 // This method will be called when Electron has finished initialization
 app.whenReady().then(async () => {
   // Set the dock icon on macOS
   if (process.platform === 'darwin') {
     app.dock.setIcon(path.join(__dirname, 'icons/mac/icon.png'));
   }
+  
+  // Create application menu with keyboard shortcuts
+  createApplicationMenu();
   
   createWindow();
   

@@ -50,6 +50,13 @@ contextBridge.exposeInMainWorld('api', {
   onSettingsLoaded: (callback) =>
     ipcRenderer.on('settings-loaded', (_, data) => callback(data)),
     
+  // Keyboard shortcut triggered events
+  onOpenSettings: (callback) =>
+    ipcRenderer.on('open-settings', () => callback()),
+    
+  onRefreshRequested: (callback) =>
+    ipcRenderer.on('refresh-requested', () => callback()),
+    
   // Cleanup function for removing event listeners
   removeAllListeners: () => {
     ipcRenderer.removeAllListeners('repository-loading');
@@ -61,5 +68,7 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.removeAllListeners('branch-changed');
     ipcRenderer.removeAllListeners('set-target-branch');
     ipcRenderer.removeAllListeners('settings-loaded');
+    ipcRenderer.removeAllListeners('open-settings');
+    ipcRenderer.removeAllListeners('refresh-requested');
   }
 });

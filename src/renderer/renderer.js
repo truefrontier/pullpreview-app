@@ -7,7 +7,6 @@ const elements = {
   autoRefreshToggle: document.getElementById('auto-refresh'),
   refreshButton: document.getElementById('refresh-button'),
   selectRepoButton: document.getElementById('select-repo-button'),
-  changeRepoButton: document.getElementById('change-repo-button'),
   emptyState: document.getElementById('empty-state'),
   selectBranch: document.getElementById('select-branch'),
   loading: document.getElementById('loading'),
@@ -96,9 +95,6 @@ async function init() {
 function setupEventListeners() {
   // Repository selection from empty state
   elements.selectRepoButton.addEventListener('click', selectRepository);
-  
-  // Repository change from toolbar
-  elements.changeRepoButton.addEventListener('click', selectRepository);
   
   // Repository selection function
   async function selectRepository() {
@@ -306,6 +302,22 @@ function setupIpcListeners() {
       
       // Log the current application settings
       console.log('Current app settings after update:', appState.settings);
+    }
+  });
+  
+  // Listen for keyboard shortcut events
+  window.api.onOpenSettings(() => {
+    // Show settings modal
+    elements.settingsModal.classList.remove('hidden');
+  });
+  
+  window.api.onRefreshRequested(() => {
+    // Only refresh if a repository is loaded and a target branch is selected
+    if (appState.repositoryLoaded && appState.targetBranch) {
+      window.api.refreshDiff(appState.targetBranch).catch(error => {
+        showError(`Error refreshing diff: ${error.message}`);
+      });
+      updateStatus('Refreshing...', 'info');
     }
   });
   
