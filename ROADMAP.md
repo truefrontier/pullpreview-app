@@ -15,8 +15,7 @@
 - [ ] Add new tab `⌘T`
 
 ### Feature Additions
-- [x] Stage/unstage changes directly in the app
-	- Added checkbox on the left side of each file to handle staged state
+- [ ] ~~Stage/unstage changes directly in the app~~ (Removed)
 
 ## Future Enhancements
 
@@ -34,7 +33,7 @@ These items are planned for future releases based on the project specification:
 - Re-enabled expand/collapse functionality for diff files
 - Added keyboard shortcuts for application menu, new window, and settings
 - Removed Change Folder button, added File menu with Open Repository option
-- Added stage/unstage functionality with checkboxes for files
+- Removed stage/unstage functionality for a cleaner interface
 - Moved auto-refresh toggle from toolbar to settings modal
 - Added persistence for repository path and target branch between sessions
 - Added settings modal with option to select preferred code editor

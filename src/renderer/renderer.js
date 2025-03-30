@@ -756,59 +756,15 @@ function createFileElement(file) {
   const fileHeader = document.createElement('div');
   fileHeader.className = 'file-header';
   
-  // Left side with staging checkbox and filename
+  // Left side with filename only
   const fileHeaderLeft = document.createElement('div');
   fileHeaderLeft.className = 'file-header-left';
-  
-  // Add staging checkbox
-  const stagingCheckboxContainer = document.createElement('div');
-  stagingCheckboxContainer.className = 'staging-checkbox-container';
-  
-  const stagingCheckbox = document.createElement('input');
-  stagingCheckbox.type = 'checkbox';
-  stagingCheckbox.className = 'staging-checkbox';
-  stagingCheckbox.title = 'Stage/unstage file';
-  stagingCheckbox.checked = file.staged; // Will be set based on git status
-  stagingCheckboxContainer.appendChild(stagingCheckbox);
-  
-  // Add click handler for the staging checkbox
-  stagingCheckbox.addEventListener('click', async (event) => {
-    // Prevent the file header click from triggering when clicking the checkbox
-    event.stopPropagation();
-    
-    try {
-      // Disable the checkbox while operation is in progress
-      stagingCheckbox.disabled = true;
-      
-      const isStaged = stagingCheckbox.checked;
-      updateStatus(`${isStaged ? 'Staging' : 'Unstaging'} file: ${file.path}...`, 'info');
-      
-      const result = await window.api.toggleStageFile({
-        filePath: file.path,
-        staged: isStaged
-      });
-      
-      if (!result.success && result.error) {
-        // If there was an error, revert the checkbox state
-        stagingCheckbox.checked = !isStaged;
-        showError(result.error);
-      }
-      
-      // Re-enable the checkbox
-      stagingCheckbox.disabled = false;
-    } catch (error) {
-      showError(`Error toggling file staged state: ${error.message}`);
-      // Re-enable the checkbox
-      stagingCheckbox.disabled = false;
-    }
-  });
   
   // Add filename
   const fileNameSpan = document.createElement('span');
   fileNameSpan.textContent = file.path;
   
-  // Add checkbox and filename to left side
-  fileHeaderLeft.appendChild(stagingCheckboxContainer);
+  // Add filename to left side
   fileHeaderLeft.appendChild(fileNameSpan);
   
   // Right side with external link icon only

@@ -988,51 +988,6 @@ ipcMain.handle('save-file-expansion-state', async (event, { filePath, isExpanded
   }
 });
 
-// Stage or unstage a file
-ipcMain.handle('toggle-stage-file', async (event, { filePath, staged }) => {
-  try {
-    if (!currentRepo) {
-      return { success: false, error: 'No repository is loaded' };
-    }
-    
-    console.log(`${staged ? 'Staging' : 'Unstaging'} file: ${filePath}`);
-    
-    // Stage or unstage the file using git add or git reset
-    try {
-      if (staged) {
-        // Stage the file
-        await currentRepo.git.add(filePath);
-      } else {
-        // Unstage the file
-        await currentRepo.git.reset(['--', filePath]);
-      }
-      
-      // After staging/unstaging, regenerate the diff to reflect the changes
-      if (mainWindow) {
-        // Get the current target branch
-        const status = await currentRepo.git.status();
-        const targetBranch = status.tracking ? status.tracking.replace(/.*\//, '') : '';
-        
-        // Regenerate the diff with updated staging status
-        await generateDiff(targetBranch);
-      }
-      
-      return { success: true };
-    } catch (error) {
-      console.error(`Error ${staged ? 'staging' : 'unstaging'} file:`, error);
-      return { 
-        success: false, 
-        error: `Error ${staged ? 'staging' : 'unstaging'} file: ${error.message}` 
-      };
-    }
-  } catch (error) {
-    console.error(`Error ${staged ? 'staging' : 'unstaging'} file:`, error);
-    return { 
-      success: false, 
-      error: `Error ${staged ? 'staging' : 'unstaging'} file: ${error.message}` 
-    };
-  }
-});
 
 // Select editor path
 ipcMain.handle('select-editor-path', async () => {
@@ -1090,8 +1045,7 @@ async function parseDiffOutput(diffOutput) {
         files.push({
           path: currentFile,
           isBinary: false,
-          hunks: currentHunks,
-          staged: false // Default to unstaged, will be updated later
+          hunks: currentHunks
         });
       }
       
@@ -1108,8 +1062,7 @@ async function parseDiffOutput(diffOutput) {
         files.push({
           path: currentFile,
           isBinary: true,
-          hunks: [],
-          staged: false // Default to unstaged, will be updated later
+          hunks: []
         });
       }
       currentFile = null;
@@ -1176,32 +1129,11 @@ async function parseDiffOutput(diffOutput) {
     files.push({
       path: currentFile,
       isBinary: false,
-      hunks: currentHunks,
-      staged: false // Default to unstaged, will be updated later
+      hunks: currentHunks
     });
   }
   
-  // Get git status to determine which files are staged
-  if (currentRepo && files.length > 0) {
-    try {
-      const status = await currentRepo.git.status();
-      
-      // Update each file's staged status based on git status
-      files.forEach(file => {
-        // Check if the file is fully staged
-        const fileStatus = status.files.find(f => f.path === file.path);
-        
-        if (fileStatus) {
-          // If the file is tracked and all changes are staged
-          if (fileStatus.index && fileStatus.index !== '?' && fileStatus.index !== ' ') {
-            file.staged = true;
-          }
-        }
-      });
-    } catch (error) {
-      console.error('Error getting git status for staging info:', error);
-    }
-  }
+  // No need to check git status anymore
   
   return files;
 }

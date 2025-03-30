@@ -593,20 +593,6 @@ main {
   cursor: pointer;
 }
 
-.staging-checkbox-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  flex-shrink: 0;
-}
-
-.staging-checkbox {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-}
 
 .file-header-right {
   padding-left: 8px;

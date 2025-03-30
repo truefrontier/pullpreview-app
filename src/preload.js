@@ -21,7 +21,6 @@ contextBridge.exposeInMainWorld('api', {
   saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
   selectEditorPath: () => ipcRenderer.invoke('select-editor-path'),
   saveFileExpansionState: (data) => ipcRenderer.invoke('save-file-expansion-state', data),
-  toggleStageFile: (data) => ipcRenderer.invoke('toggle-stage-file', data),
   
   // Events
   onRepositoryLoading: (callback) =>
