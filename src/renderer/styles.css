@@ -482,6 +482,11 @@ input:checked + .toggle-slider::before {
   .status-link {
     color: #4dabf5;
   }
+  
+  /* Make Cancel button readable in dark mode */
+  button:not(.primary-button) {
+    color: #e0e0e0;
+  }
 }
 
 button {
