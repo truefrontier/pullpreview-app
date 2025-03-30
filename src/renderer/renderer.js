@@ -176,7 +176,15 @@ function setupEventListeners() {
     
     // Apply sorting to the current diff
     if (elements.diffContainer.children.length > 0) {
-      sortFileElements(selectedSortOrder);
+      if (selectedSortOrder === 'modified' && appState.targetBranch) {
+        // For modified sorting, refresh the diff to get the original order from the server
+        window.api.refreshDiff(appState.targetBranch).catch(error => {
+          showError(`Error refreshing diff: ${error.message}`);
+        });
+      } else {
+        // Apply client-side sorting for alphabetical orders
+        sortFileElements(selectedSortOrder);
+      }
       updateStatus(`Sorted files by ${getSortOrderLabel(selectedSortOrder)}`, 'info');
     }
   });
@@ -687,10 +695,12 @@ function sortFiles(files, sortOrder) {
   }
 }
 
-// Sort existing file elements in the DOM
+// Sort existing file elements in the DOM alphabetically
 function sortFileElements(sortOrder) {
   const fileElements = [...elements.diffContainer.children];
   
+  // This function only handles alphabetical sorting (AZ or ZA)
+  // For modified time sorting, we refresh from the server
   switch (sortOrder) {
     case 'az':
       fileElements.sort((a, b) => {
@@ -702,9 +712,9 @@ function sortFileElements(sortOrder) {
         return b.dataset.filePath.localeCompare(a.dataset.filePath);
       });
       break;
-    case 'modified':
     default:
-      // Do nothing, as elements are already in modification time order
+      // Should not happen since we handle modified sorting separately
+      console.warn(`Unexpected sort order in sortFileElements: ${sortOrder}`);
       return;
   }
   
