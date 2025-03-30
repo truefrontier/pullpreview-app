@@ -381,7 +381,7 @@ function setupIpcListeners() {
     if (isLoading) {
       elements.noDifferences.classList.add('hidden');
       elements.diffContainer.classList.add('hidden');
-      updateStatus('Loading diff...');
+      updateStatus('Pulling changes...');
     }
   });
   
