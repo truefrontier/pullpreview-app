@@ -17,37 +17,40 @@ PullPreview is a cross-platform desktop application designed to streamline the d
 ### Repository Selection & Validation
 * Select any Git repository on your file system
 * Validation ensures the selected folder contains a valid `.git` directory
-* The application remembers your last opened repository for convenience
+* The application remembers your last opened repository and target branch for convenience
 
 ### Branch Selection
 * Automatically detects and displays your current active branch
 * Select any target branch for comparison from a dropdown menu
 * Supports both local and remote-tracking branches
+* Remembers your last selected target branch between sessions
 
 ### Git Diff Preview Display
 * Real-time display of differences between your working branch and the target branch
-* Clear, scrollable view of all changed files
+* Clear, scrollable view of all changed files with expandable/collapsible sections
 * Visual indicators for additions and deletions with appropriate color coding
 * Syntax highlighting using the Hack monospaced font for improved readability
+* Supports multiple sort options (Last Modified, A-Z, Z-A)
 
 ### Auto-Refresh Functionality
-* Toggle automatic refresh on or off according to your preference
+* Configure automatic refresh in settings
 * When enabled, the diff view updates automatically when:
   * Local files change in your repository
   * Remote changes are detected on the target branch
-* Manual refresh button available when auto-refresh is disabled
+* Manual refresh button (or keyboard shortcut ⌘R) available when auto-refresh is disabled
 
 ### External Editor Integration
-* Click on any file in the diff view to open it in your default editor
+* Click on any file in the diff view to open it in your preferred editor
+* Configure your preferred editor in settings (system default, VS Code, Sublime Text, Atom, or custom)
 * Seamlessly transition from reviewing changes to making edits
 
 ## User Interface
 
 * Modern, clean design that follows desktop application standards
 * Full support for both light and dark modes across all platforms
-* Clear header showing repository path, current branch, and target branch
-* Intuitive controls for auto-refresh and manual refresh options
+* Clear header showing current branch and target branch
 * Responsive layout that adapts to different window sizes
+* Keyboard shortcuts for common operations (⌘N for new window, ⌘O for open repository, ⌘R for refresh, ⌘, for settings)
 
 ## Technical Details
 
@@ -56,6 +59,7 @@ PullPreview is a cross-platform desktop application designed to streamline the d
 * File system monitoring via chokidar for real-time updates
 * Persistence of preferences and recently used repositories
 * Graceful error handling for all Git operations and edge cases
+* Full app state persistence between sessions
 
 ## Installation & Usage
 
@@ -69,10 +73,10 @@ Download the latest version for your platform from the releases page.
 ### Running from Source
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/pull-preview.git
+git clone https://github.com/truefrontier/pullpreview-app.git
 
 # Install dependencies
-cd pull-preview
+cd pullpreview-app
 npm install
 
 # Start the application
@@ -86,7 +90,21 @@ npm run dev
 ```bash
 # Build for your current platform
 npm run build
+
+# Package the application
+npm run pack
+
+# Generate macOS icons (macOS only)
+npm run generate-icons
 ```
+
+## Keyboard Shortcuts
+
+* **⌘N** - Open new window
+* **⌘O** - Open repository
+* **⌘R** - Refresh diff
+* **⌘,** - Open settings
+* **⌘+** / **⌘-** - Zoom in/out
 
 ## Roadmap
 
