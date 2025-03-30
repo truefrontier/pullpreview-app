@@ -830,31 +830,26 @@ function createFileElement(file) {
   expandCollapseIcon.setAttribute('data-lucide', isExpanded ? 'chevron-down' : 'chevron-right');
   fileHeaderFarRight.appendChild(expandCollapseIcon);
   
+  // Add title attribute for tooltip
+  fileHeaderFarRight.title = isExpanded ? 'Collapse file' : 'Expand file';
+  
   // Add all sections to header
   fileHeader.appendChild(fileHeaderLeft);
   fileHeader.appendChild(fileHeaderRight);
   fileHeader.appendChild(fileHeaderFarRight);
   
-  // Click handler for the entire header to toggle expand/collapse
-  fileHeader.addEventListener('click', (event) => {
-    // Only handle clicks directly on the header or the chevron icon
-    // This lets other click handlers work for other elements
-    if (event.target === fileHeader || 
-        event.target === fileHeaderFarRight || 
-        event.target === expandCollapseIcon ||
-        expandCollapseIcon.contains(event.target)) {
-      
-      const isCurrentlyExpanded = fileElement.dataset.expanded === 'true';
-      const newExpandedState = !isCurrentlyExpanded;
-      
-      // Toggle expanded state
-      toggleFileExpansion(fileElement, newExpandedState);
-      
-      // Save the expansion state
-      saveFileExpansionState(file.path, newExpandedState);
-      
-      event.stopPropagation();
-    }
+  // Click handler ONLY for the far right section (with chevron) to toggle expand/collapse
+  fileHeaderFarRight.addEventListener('click', (event) => {
+    const isCurrentlyExpanded = fileElement.dataset.expanded === 'true';
+    const newExpandedState = !isCurrentlyExpanded;
+    
+    // Toggle expanded state
+    toggleFileExpansion(fileElement, newExpandedState);
+    
+    // Save the expansion state
+    saveFileExpansionState(file.path, newExpandedState);
+    
+    event.stopPropagation();
   });
   
   // Add click handler to open file when clicking on left side (the filename area)
@@ -977,7 +972,9 @@ function toggleFileExpansion(fileElement, expand) {
   const hunksContainer = fileElement.querySelector('.diff-hunks');
   
   // Update the expand/collapse icon
+  const fileHeaderFarRight = fileElement.querySelector('.file-header-far-right');
   const expandCollapseIcon = fileElement.querySelector('.expand-collapse-icon');
+  
   if (expandCollapseIcon) {
     expandCollapseIcon.setAttribute('data-lucide', expand ? 'chevron-down' : 'chevron-right');
     
@@ -991,6 +988,11 @@ function toggleFileExpansion(fileElement, expand) {
         elements: [expandCollapseIcon]
       });
     }
+  }
+  
+  // Update tooltip
+  if (fileHeaderFarRight) {
+    fileHeaderFarRight.title = expand ? 'Collapse file' : 'Expand file';
   }
   
   // Show/hide content based on expanded state
@@ -1024,16 +1026,15 @@ function toggleAllFiles() {
   updateExpandCollapseAllButton(!allExpanded);
 }
 
-// Update the expand/collapse all button text and icon
+// Update the expand/collapse all button icon and tooltip
 function updateExpandCollapseAllButton(expanding) {
-  const buttonText = elements.expandCollapseAll.querySelector('span');
   const buttonIcon = elements.expandCollapseAll.querySelector('i');
   
   if (expanding) {
-    buttonText.textContent = 'Collapse All';
+    elements.expandCollapseAll.title = 'Collapse all files';
     buttonIcon.setAttribute('data-lucide', 'chevrons-up');
   } else {
-    buttonText.textContent = 'Expand All';
+    elements.expandCollapseAll.title = 'Expand all files';
     buttonIcon.setAttribute('data-lucide', 'chevrons-down');
   }
   
