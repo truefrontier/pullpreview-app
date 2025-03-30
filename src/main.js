@@ -125,6 +125,12 @@ async function loadSavedRepository() {
           if (data.lastTargetBranch) {
             // We need to wait a longer time to let the UI fully initialize and load all branches
             // before setting the target branch
+            
+            // Notify UI that we're trying to set target branch (to show loading state)
+            if (mainWindow) {
+              mainWindow.webContents.send('diff-loading', true);
+            }
+            
             setTimeout(() => {
               if (mainWindow) {
                 console.log(`Setting target branch from saved preferences: ${data.lastTargetBranch}`);
@@ -140,9 +146,13 @@ async function loadSavedRepository() {
                     });
                   } else {
                     console.warn(`Saved target branch "${data.lastTargetBranch}" not found in available branches: [${branches.join(', ')}]`);
+                    // Make sure to turn off loading state if branch not found
+                    mainWindow.webContents.send('diff-loading', false);
                   }
                 }).catch(err => {
                   console.error("Error checking branches before setting target branch:", err);
+                  // Make sure to turn off loading state on error
+                  mainWindow.webContents.send('diff-loading', false);
                 });
               }
             }, 1500); // Increased delay to ensure all UI components are ready
